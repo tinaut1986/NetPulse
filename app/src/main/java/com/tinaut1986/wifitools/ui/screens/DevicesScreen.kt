@@ -26,7 +26,12 @@ import com.tinaut1986.wifitools.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun DevicesScreen(devices: List<DeviceInfo>, isScanning: Boolean, onRefresh: () -> Unit) {
+fun DevicesScreen(
+    devices: List<DeviceInfo>,
+    isScanning: Boolean,
+    currentIp: String,
+    onRefresh: () -> Unit
+) {
     var selectedIp by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -80,15 +85,9 @@ fun DevicesScreen(devices: List<DeviceInfo>, isScanning: Boolean, onRefresh: () 
             ) {
                 item {
                     Text("Subnet Scan Map", color = PrimaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
-                    NetworkMap(devices, selectedIp) { ip ->
+                    NetworkMap(devices, selectedIp, currentIp) { ip ->
                         selectedIp = ip
-                        val index = devices.indexOfFirst { it.ip == ip }
-                        if (index >= 0) {
-                            scope.launch {
-                                // +2 to account for the Map and Header items in LazyColumn
-                                listState.animateScrollToItem(index + 2)
-                            }
-                        }
+                        // We select without scrolling as requested
                     }
                 }
                 
@@ -97,7 +96,11 @@ fun DevicesScreen(devices: List<DeviceInfo>, isScanning: Boolean, onRefresh: () 
                 }
 
                 items(devices) { device ->
-                    DeviceItem(device, isSelected = device.ip == selectedIp)
+                    DeviceItem(
+                        device, 
+                        isCurrent = device.ip == currentIp,
+                        isSelected = device.ip == selectedIp
+                    )
                 }
             }
         }
@@ -105,7 +108,12 @@ fun DevicesScreen(devices: List<DeviceInfo>, isScanning: Boolean, onRefresh: () 
 }
 
 @Composable
-fun NetworkMap(devices: List<DeviceInfo>, selectedIp: String?, onIpClick: (String) -> Unit) {
+fun NetworkMap(
+    devices: List<DeviceInfo>,
+    selectedIp: String?,
+    currentIp: String,
+    onIpClick: (String) -> Unit
+) {
     val prefix = remember(devices) { 
         devices.firstOrNull()?.ip?.substringBeforeLast(".")?.let { "$it." } ?: "192.168.1."
     }
@@ -115,65 +123,104 @@ fun NetworkMap(devices: List<DeviceInfo>, selectedIp: String?, onIpClick: (Strin
 
     PremiumCard {
         Column {
-            for (row in 0 until 16) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    for (col in 0 until 16) {
-                        val ipLastOctet = row * 16 + col
-                        if (ipLastOctet in 1..254) {
-                            val device = activeIps[ipLastOctet]
-                            val isActive = device != null
-                            val fullIp = "$prefix$ipLastOctet"
-                            val isSelected = selectedIp == fullIp
-                            
-                            val color = when {
-                                isSelected -> Color.White
-                                isActive -> PrimaryBlue
-                                else -> Color.White.copy(alpha = 0.05f)
-                            }
-                            
-                            Box(
-                                modifier = Modifier
-                                    .padding(1.dp)
-                                    .size(14.dp)
-                                    .background(color, RoundedCornerShape(2.dp))
-                                    .let {
-                                        if (isActive) it.clickable { onIpClick(fullIp) }
-                                        else it
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    for (row in 0 until 16) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            for (col in 0 until 16) {
+                                val ipLastOctet = row * 16 + col
+                                if (ipLastOctet in 1..254) {
+                                    val device = activeIps[ipLastOctet]
+                                    val isActive = device != null
+                                    val fullIp = "$prefix$ipLastOctet"
+                                    val isSelected = selectedIp == fullIp
+                                    val isLocal = fullIp == currentIp
+                                    
+                                    val color = when {
+                                        isSelected -> Color.White
+                                        isLocal -> PrimaryPurple
+                                        isActive -> PrimaryBlue
+                                        else -> Color.White.copy(alpha = 0.05f)
                                     }
-                            )
-                        } else {
-                            Spacer(Modifier.size(16.dp))
+                                    
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(1.dp)
+                                            .size(14.dp)
+                                            .background(color, RoundedCornerShape(2.dp))
+                                            .let {
+                                                if (isActive) it.clickable { onIpClick(fullIp) }
+                                                else it
+                                            }
+                                    )
+                                } else {
+                                    Spacer(Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bubble Info
+                selectedIp?.let { ip ->
+                    val device = devices.find { it.ip == ip }
+                    if (device != null) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp),
+                            color = Color.Black.copy(alpha = 0.9f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(device.hostname.ifEmpty { "Unknown Name" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(device.ip, color = PrimaryBlue, fontSize = 10.sp)
+                                if (device.mac != "Unknown") {
+                                    Text(device.mac, color = Color.Gray, fontSize = 10.sp)
+                                }
+                            }
                         }
                     }
                 }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(10.dp).background(PrimaryBlue, RoundedCornerShape(2.dp)))
-                Text(" Active", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 16.dp))
-                Box(modifier = Modifier.size(10.dp).background(Color.White, RoundedCornerShape(2.dp)))
-                Text(" Selected", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 16.dp))
-                Box(modifier = Modifier.size(10.dp).background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(2.dp)))
-                Text(" Empty", color = Color.Gray, fontSize = 10.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(10.dp).background(PrimaryPurple, RoundedCornerShape(2.dp)))
+                    Text(" You", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
+                    Box(modifier = Modifier.size(10.dp).background(PrimaryBlue, RoundedCornerShape(2.dp)))
+                    Text(" Active", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
+                    Box(modifier = Modifier.size(10.dp).background(Color.White, RoundedCornerShape(2.dp)))
+                    Text(" Selected", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-fun DeviceItem(device: DeviceInfo, isSelected: Boolean) {
-    val backgroundColor = if (isSelected) PrimaryBlue.copy(alpha = 0.2f) else CardBackground
-    val borderColor = if (isSelected) PrimaryBlue else Color.Transparent
+fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
+    val backgroundColor = when {
+        isSelected -> PrimaryBlue.copy(alpha = 0.2f)
+        isCurrent -> PrimaryPurple.copy(alpha = 0.1f)
+        else -> CardBackground
+    }
+    val borderColor = if (isSelected) PrimaryBlue else if (isCurrent) PrimaryPurple else Color.Transparent
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        border = if (isSelected) BorderStroke(1.dp, borderColor) else null
+        border = if (isSelected || isCurrent) BorderStroke(1.dp, borderColor) else null
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -182,17 +229,40 @@ fun DeviceItem(device: DeviceInfo, isSelected: Boolean) {
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(PrimaryPurple.copy(alpha = 0.1f), CircleShape),
+                    .background(if (isCurrent) PrimaryPurple.copy(alpha = 0.2f) else PrimaryPurple.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Computer, contentDescription = null, tint = PrimaryPurple)
+                Icon(
+                    if (isCurrent) Icons.Default.Computer else Icons.Default.Computer, 
+                    contentDescription = null, 
+                    tint = if (isCurrent) Color.White else PrimaryPurple
+                )
             }
             
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(device.hostname.ifEmpty { "Unknown Device" }, color = Color.White, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        device.hostname.ifEmpty { "Unknown Device" }, 
+                        color = Color.White, 
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    if (isCurrent) {
+                        Surface(
+                            modifier = Modifier.padding(start = 8.dp),
+                            color = PrimaryPurple,
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text("YOU", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                        }
+                    }
+                }
                 Text(device.ip, color = Color.Gray, fontSize = 12.sp)
+                if (device.mac != "Unknown") {
+                    Text(device.mac, color = Color.Gray.copy(alpha = 0.5f), fontSize = 11.sp)
+                }
             }
             
             if (device.isReachable) {

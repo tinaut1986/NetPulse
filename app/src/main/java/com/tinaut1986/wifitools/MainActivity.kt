@@ -156,7 +156,13 @@ class MainActivity : ComponentActivity() {
                             composable("devices") {
                                 val devices by viewModel.devices.collectAsState()
                                 val isScanning by viewModel.isScanning.collectAsState()
-                                DevicesScreen(devices, isScanning, onRefresh = { viewModel.scanDevices() })
+                                val wifiInfo by viewModel.wifiInfo.collectAsState()
+                                DevicesScreen(
+                                    devices = devices,
+                                    isScanning = isScanning,
+                                    currentIp = wifiInfo.ipAddress,
+                                    onRefresh = { viewModel.scanDevices() }
+                                )
                             }
                             composable("tools") {
                                  val pingResult by viewModel.pingResult.collectAsState()
