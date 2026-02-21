@@ -10,8 +10,21 @@ data class WifiInfo(
     val gateway: String = "0.0.0.0",
     val mask: String = "255.255.255.0",
     val dns1: String = "0.0.0.0",
-    val dns2: String = "0.0.0.0"
-)
+    val dns2: String = "0.0.0.0",
+    val packetLoss: Float = 0f,
+    val avgLatency: Long = 0,
+    val isWifi: Boolean = true
+) {
+    fun getChannel(): Int {
+        return if (frequency >= 2412 && frequency <= 2484) {
+            (frequency - 2412) / 5 + 1
+        } else if (frequency >= 5170 && frequency <= 5825) {
+            (frequency - 5170) / 5 + 34
+        } else {
+            0
+        }
+    }
+}
 
 data class DeviceInfo(
     val ip: String,

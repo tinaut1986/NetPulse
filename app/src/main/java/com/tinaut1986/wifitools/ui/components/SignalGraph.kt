@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -33,6 +34,8 @@ fun SignalGraph(
 ) {
     val animateX = remember { Animatable(0f) }
     val textMeasurer = rememberTextMeasurer()
+    val labelColor = MaterialTheme.colorScheme.onSurface
+    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
     
     LaunchedEffect(history.size) {
         animateX.animateTo(1f, animationSpec = tween(500))
@@ -49,29 +52,29 @@ fun SignalGraph(
         
         // --- DRAW THRESHOLD LINES ---
         val thresholds = listOf(
-            Triple(-40, "Excellent", SignalGreen),
-            Triple(-60, "Good", SignalYellow),
-            Triple(-80, "Weak", SignalRed)
+            Triple(-40, "EXCELLENT", SignalGreen),
+            Triple(-60, "GOOD", SignalYellow),
+            Triple(-80, "WEAK", SignalRed)
         )
 
         thresholds.forEach { (dbm, label, color) ->
             val normalizedY = ((dbm + 100).coerceIn(0, 80)) / 80f
             val y = height - (normalizedY * height)
             
-            // Dashed line
+            // Dashed line - subtly tinted with threshold color but using theme-aware base
             drawLine(
-                color = color.copy(alpha = 0.3f),
+                color = color.copy(alpha = 0.4f),
                 start = Offset(0f, y),
                 end = Offset(width, y),
                 strokeWidth = 1.dp.toPx(),
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
             )
             
-            // Label
+            // Label - uses theme contrast
             drawText(
                 textMeasurer = textMeasurer,
                 text = "$dbm dBm ($label)",
-                style = TextStyle(color = color.copy(alpha = 0.5f), fontSize = 10.sp),
+                style = TextStyle(color = labelColor.copy(alpha = 0.7f), fontSize = 10.sp),
                 topLeft = Offset(8.dp.toPx(), y - 16.dp.toPx())
             )
         }
@@ -93,7 +96,7 @@ fun SignalGraph(
         drawPath(
             path = path,
             brush = Brush.horizontalGradient(listOf(PrimaryBlue, PrimaryPurple)),
-            style = Stroke(width = 4.dp.toPx())
+            style = Stroke(width = 2.dp.toPx())
         )
         
         // Add a subtle fill

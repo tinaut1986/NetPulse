@@ -2,6 +2,7 @@ package com.tinaut1986.wifitools.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.tinaut1986.wifitools.R
 import com.tinaut1986.wifitools.data.DeviceInfo
 import com.tinaut1986.wifitools.ui.components.*
 import com.tinaut1986.wifitools.ui.theme.*
@@ -39,7 +42,7 @@ fun DevicesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
         Row(
@@ -49,15 +52,15 @@ fun DevicesScreen(
         ) {
             Column {
                 Text(
-                    text = "Connected Devices",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
+                    text = stringResource(R.string.connected_devices),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${devices.size} devices found",
-                    color = Color.Gray,
-                    fontSize = 14.sp
+                    text = stringResource(R.string.devices_found, devices.size),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                    fontSize = 12.sp
                 )
             }
             
@@ -76,7 +79,7 @@ fun DevicesScreen(
 
         if (devices.isEmpty() && !isScanning) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No devices found. Start a scan!", color = Color.Gray)
+                Text(stringResource(R.string.no_devices), color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -84,15 +87,14 @@ fun DevicesScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    Text("Subnet Scan Map", color = PrimaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
+                    Text(stringResource(R.string.subnet_scan_map), color = PrimaryBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(vertical = 4.dp))
                     NetworkMap(devices, selectedIp, currentIp) { ip ->
                         selectedIp = ip
-                        // We select without scrolling as requested
                     }
                 }
                 
                 item {
-                    Text("Device List", color = PrimaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp))
+                    Text(stringResource(R.string.device_list), color = PrimaryBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(vertical = 4.dp))
                 }
 
                 items(devices) { device ->
@@ -140,10 +142,10 @@ fun NetworkMap(
                                     val isLocal = fullIp == currentIp
                                     
                                     val color = when {
-                                        isSelected -> Color.White
+                                        isSelected -> MaterialTheme.colorScheme.primary
                                         isLocal -> PrimaryPurple
                                         isActive -> PrimaryBlue
-                                        else -> Color.White.copy(alpha = 0.05f)
+                                        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                                     }
                                     
                                     Box(
@@ -151,6 +153,10 @@ fun NetworkMap(
                                             .padding(1.dp)
                                             .size(14.dp)
                                             .background(color, RoundedCornerShape(2.dp))
+                                            .let {
+                                                if (isSelected) it.border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(2.dp))
+                                                else it
+                                            }
                                             .let {
                                                 if (isActive) it.clickable { onIpClick(fullIp) }
                                                 else it
@@ -172,15 +178,15 @@ fun NetworkMap(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(bottom = 8.dp),
-                            color = Color.Black.copy(alpha = 0.9f),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
                             shape = RoundedCornerShape(12.dp),
                             border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.5f))
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text(device.hostname.ifEmpty { "Unknown Name" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(device.hostname.ifEmpty { stringResource(R.string.unknown_device) }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 Text(device.ip, color = PrimaryBlue, fontSize = 10.sp)
                                 if (device.mac != "Unknown") {
-                                    Text(device.mac, color = Color.Gray, fontSize = 10.sp)
+                                    Text(device.mac, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp)
                                 }
                             }
                         }
@@ -196,11 +202,11 @@ fun NetworkMap(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(10.dp).background(PrimaryPurple, RoundedCornerShape(2.dp)))
-                    Text(" You", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
+                    Text(" " + stringResource(R.string.you), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
                     Box(modifier = Modifier.size(10.dp).background(PrimaryBlue, RoundedCornerShape(2.dp)))
-                    Text(" Active", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
-                    Box(modifier = Modifier.size(10.dp).background(Color.White, RoundedCornerShape(2.dp)))
-                    Text(" Selected", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
+                    Text(" " + stringResource(R.string.active), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
+                    Box(modifier = Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
+                    Text(" " + stringResource(R.string.selected), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
                 }
             }
         }
@@ -212,7 +218,7 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
     val backgroundColor = when {
         isSelected -> PrimaryBlue.copy(alpha = 0.2f)
         isCurrent -> PrimaryPurple.copy(alpha = 0.1f)
-        else -> CardBackground
+        else -> MaterialTheme.colorScheme.surface
     }
     val borderColor = if (isSelected) PrimaryBlue else if (isCurrent) PrimaryPurple else Color.Transparent
 
@@ -244,10 +250,10 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        device.hostname.ifEmpty { "Unknown Device" }, 
-                        color = Color.White, 
+                        device.hostname.ifEmpty { stringResource(R.string.unknown_device) }, 
+                        color = MaterialTheme.colorScheme.onSurface, 
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 15.sp
                     )
                     if (isCurrent) {
                         Surface(
@@ -259,9 +265,9 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
                         }
                     }
                 }
-                Text(device.ip, color = Color.Gray, fontSize = 12.sp)
+                Text(device.ip, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
                 if (device.mac != "Unknown") {
-                    Text(device.mac, color = Color.Gray.copy(alpha = 0.5f), fontSize = 11.sp)
+                    Text(device.mac, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), fontSize = 11.sp)
                 }
             }
             

@@ -8,6 +8,7 @@ import com.tinaut1986.wifitools.data.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class WifiViewModel(application: Application) : AndroidViewModel(application) {
@@ -30,22 +31,64 @@ class WifiViewModel(application: Application) : AndroidViewModel(application) {
     private val _isPinging = MutableStateFlow(false)
     val isPinging: StateFlow<Boolean> = _isPinging
 
+    private val _toolResult = MutableStateFlow<String?>(null)
+    val toolResult: StateFlow<String?> = _toolResult
+
+    private val _publicIp = MutableStateFlow<String>("Loading...")
+    val publicIp: StateFlow<String> = _publicIp
+
     private var pingJob: kotlinx.coroutines.Job? = null
 
     init {
         startSignalMonitoring()
+        fetchPublicIp()
+        observeNetworkChanges()
+    }
+
+    private fun observeNetworkChanges() {
+        viewModelScope.launch {
+            var lastConn = ""
+            wifiInfo.collect { info ->
+                val currentConn = "${info.ssid}_${info.ipAddress}"
+                if (currentConn != lastConn && info.ipAddress != "0.0.0.0") {
+                    lastConn = currentConn
+                    fetchPublicIp()
+                    if (info.isWifi) scanDevices() // Auto scan on new WiFi
+                }
+            }
+        }
     }
 
     private fun startSignalMonitoring() {
         viewModelScope.launch {
             while (true) {
                 wifiScanner.updateWifiInfo()
-                val currentRssi = wifiInfo.value.rssi
+                val info = wifiInfo.value
+                val currentRssi = info.rssi
                 if (currentRssi != 0) {
                     signalHistory.add(currentRssi)
                     if (signalHistory.size > 50) signalHistory.removeAt(0)
                 }
-                delay(2000)
+
+                // Continuous packet loss check
+                val gateway = info.gateway
+                if (gateway != "0.0.0.0") {
+                    var successCount = 0
+                    var totalLatency = 0L
+                    val testCount = 2 // Keeping it low for continuous check
+                    for (i in 1..testCount) {
+                        val latency = pingTool.ping(gateway, 1000)
+                        if (latency >= 0) {
+                            successCount++
+                            totalLatency += latency
+                        }
+                    }
+                    val packetLoss = ((testCount - successCount).toFloat() / testCount) * 100
+                    val avgLatency = if (successCount > 0) totalLatency / successCount else 0L
+                    wifiScanner.updateNetworkQuality(packetLoss, avgLatency)
+                }
+                
+                delay(3000) // Increased delay slightly to accommodate pings
             }
         }
     }
@@ -83,5 +126,41 @@ class WifiViewModel(application: Application) : AndroidViewModel(application) {
     fun stopPing() {
         _isPinging.value = false
         pingJob?.cancel()
+    }
+
+    fun fetchPublicIp() {
+        viewModelScope.launch {
+            _publicIp.value = pingTool.getPublicIp() ?: "Failed to detect"
+        }
+    }
+
+    fun runPortCheck(host: String, port: Int) {
+        viewModelScope.launch {
+            _toolResult.value = "Checking $host:$port..."
+            val open = pingTool.checkPort(host, port)
+            _toolResult.value = if (open) "Port $port is OPEN on $host" else "Port $port is CLOSED on $host"
+        }
+    }
+
+    fun runDnsLookup(host: String) {
+        viewModelScope.launch {
+            _toolResult.value = "Resolving $host..."
+            val ips = pingTool.dnsLookup(host)
+            _toolResult.value = if (ips.isNotEmpty()) "Resolved IPs:\n" + ips.joinToString("\n") else "Could not resolve $host"
+        }
+    }
+
+    fun runTraceroute(host: String) {
+        if (_isPinging.value) return
+        pingJob = viewModelScope.launch {
+            _isPinging.value = true
+            val results = mutableListOf<String>()
+            _toolResult.value = "Traceroute to $host..."
+            pingTool.traceroute(host) { hop, ip, time ->
+                results.add("$hop: $ip (${time}ms)")
+                _toolResult.value = results.joinToString("\n")
+            }
+            _isPinging.value = false
+        }
     }
 }
