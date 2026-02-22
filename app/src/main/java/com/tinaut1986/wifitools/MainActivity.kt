@@ -224,15 +224,23 @@ class MainActivity : ComponentActivity() {
                                     val toolResult by viewModel.toolResult.collectAsState()
                                     val publicIp by viewModel.publicIp.collectAsState()
                                     val isPinging by viewModel.isPinging.collectAsState()
-                                    
+                                    val isPortScanning by viewModel.isPortScanning.collectAsState()
+                                    val portScanProgress by viewModel.portScanProgress.collectAsState()
+                                    val portScanResults by viewModel.portScanResults.collectAsState()
+
                                     ToolsScreen(
                                         pingResult = pingResult,
                                         toolResult = toolResult,
                                         publicIp = publicIp,
                                         isPinging = isPinging,
+                                        isPortScanning = isPortScanning,
+                                        portScanProgress = portScanProgress,
+                                        portScanResults = portScanResults,
                                         onPing = { viewModel.runPing(it) },
                                         onStopPing = { viewModel.stopPing() },
                                         onPortCheck = { host, port -> viewModel.runPortCheck(host, port) },
+                                        onFullPortScan = { viewModel.runFullPortScan(it) },
+                                        onStopPortScan = { viewModel.stopPortScan() },
                                         onDnsLookup = { viewModel.runDnsLookup(it) },
                                         onTraceroute = { viewModel.runTraceroute(it) }
                                     )

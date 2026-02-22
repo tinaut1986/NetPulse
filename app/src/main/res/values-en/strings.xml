@@ -19,6 +19,7 @@
     <string name="dns_port_title">DNS &amp; Port Scan</string>
     <string name="host_url_label">Host or URL</string>
     <string name="port_label">Port</string>
+    <string name="port_label_optional">Port (empty = All)</string>
     <string name="check_btn">Check</string>
     <string name="dns_lookup_btn">DNS Lookup</string>
     <string name="traceroute_title">Traceroute</string>
@@ -51,4 +52,35 @@
     <string name="selected">Selected</string>
     <string name="unknown_device">Unknown Device</string>
     <string name="speed_test">Speed Test</string>
+    <!-- Device Detail Dialog -->
+    <string name="device_details">Device Details</string>
+    <string name="general_info">General Information</string>
+    <string name="open_ports">Open Ports</string>
+    <string name="no_open_ports">No open ports detected</string>
+    <string name="device_type">Device Type</string>
+    <string name="mac_address">MAC Address</string>
+    <string name="manufacturer">Manufacturer</string>
+    <string name="hostname_label">Hostname</string>
+    <string name="status_reachable">Reachable</string>
+    <string name="status_unreachable">Unreachable</string>
+    <string name="view_details">View Details</string>
+    <string name="close">Close</string>
+    <string name="port_service_unknown">Unknown</string>
+    <!-- Device type names -->
+    <string name="dtype_router">Router / Gateway</string>
+    <string name="dtype_mobile">Smartphone / Tablet</string>
+    <string name="dtype_pc">PC / Computer</string>
+    <string name="dtype_printer">Printer</string>
+    <string name="dtype_tv">Smart TV / Streaming</string>
+    <string name="dtype_server">Server / NAS</string>
+    <string name="dtype_iot">IoT / Camera</string>
+    <string name="dtype_unknown">Unknown</string>
+    <string name="status_label">Status</string>
+    <!-- Full port scan -->
+    <string name="full_port_scan">Scan all ports</string>
+    <string name="full_port_scan_desc">Ports 1–65535 in parallel</string>
+    <string name="scan_all">Scan</string>
+    <string name="stop_scan">Stop</string>
+    <string name="scanning_ports">Scanning ports</string>
+    <string name="ports_found">%1$d open port(s)</string>
 </resources>

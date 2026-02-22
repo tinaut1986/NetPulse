@@ -14,6 +14,13 @@ import java.net.Socket
 
 class NetworkScanner {
 
+    // Well-known ports that we probe for every discovered host
+    private val COMMON_PORTS = listOf(
+        21, 22, 23, 25, 53, 80, 110, 135, 139, 143,
+        443, 445, 554, 631, 3306, 3389, 5357, 5900,
+        7000, 8008, 8009, 8060, 8080, 8443, 9100
+    )
+
     suspend fun scanSubnet(gateway: String): List<DeviceInfo> = withContext(Dispatchers.IO) {
         val prefix = gateway.substringBeforeLast(".") + "."
 
@@ -30,8 +37,11 @@ class NetworkScanner {
                         val mac = nbMac ?: getMacFromArpCache(ip) ?: "Unknown"
                         val vendor = if (mac != "Unknown") getVendorFromMac(mac) else "Unknown"
 
-                        // 3. Detect type: hostname hints → port scan
-                        val deviceType = detectType(ip, nbName ?: "", vendor)
+                        // 3. Probe all common ports once, reuse for type detection
+                        val openPorts = COMMON_PORTS.filter { port -> isPortOpen(ip, port) }
+
+                        // 4. Detect device type using hostname hints + already-known open ports
+                        val deviceType = detectTypeFromPorts(ip, nbName ?: "", vendor, openPorts)
 
                         DeviceInfo(
                             ip = ip,
@@ -39,7 +49,8 @@ class NetworkScanner {
                             vendor = vendor,
                             hostname = nbName ?: "",
                             isReachable = true,
-                            deviceType = deviceType
+                            deviceType = deviceType,
+                            openPorts = openPorts
                         )
                     } else null
                 } catch (e: Exception) { null }
@@ -153,9 +164,9 @@ class NetworkScanner {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Port-based device type detection (most reliable fallback)
+    // Device type detection using hostname + vendor hints + open port list
     // ─────────────────────────────────────────────────────────────────
-    private fun detectType(ip: String, hostname: String, vendor: String): DeviceType {
+    private fun detectTypeFromPorts(ip: String, hostname: String, vendor: String, openPorts: List<Int>): DeviceType {
         val h = hostname.lowercase()
         val v = vendor.lowercase()
 
@@ -167,15 +178,15 @@ class NetworkScanner {
         if (h.contains("bravia") || h.contains("chromecast") || h.contains("appletv") || h.contains("roku")) return DeviceType.TV
         if (h.contains("nas") || h.contains("synology") || h.contains("server")) return DeviceType.SERVER
 
-        // Port checks (ordered fastest/most-specific first)
-        if (isPortOpen(ip, 9100) || isPortOpen(ip, 631)) return DeviceType.PRINTER
-        if (isPortOpen(ip, 8008) || isPortOpen(ip, 8009)) return DeviceType.TV   // Chromecast
-        if (isPortOpen(ip, 8060)) return DeviceType.TV                           // Roku
-        if (isPortOpen(ip, 7000)) return DeviceType.TV                           // AirPlay / Apple TV
-        if (isPortOpen(ip, 5357) || isPortOpen(ip, 135)) return DeviceType.PC    // Windows
-        if (isPortOpen(ip, 554)) return DeviceType.IOT                           // RTSP camera
-        if (isPortOpen(ip, 22)) return DeviceType.SERVER                         // SSH → likely server
-        if (isPortOpen(ip, 80) || isPortOpen(ip, 443)) {
+        // Port-based checks using already-scanned port list
+        if (9100 in openPorts || 631 in openPorts) return DeviceType.PRINTER
+        if (8008 in openPorts || 8009 in openPorts) return DeviceType.TV   // Chromecast
+        if (8060 in openPorts) return DeviceType.TV                         // Roku
+        if (7000 in openPorts) return DeviceType.TV                         // AirPlay / Apple TV
+        if (5357 in openPorts || 135 in openPorts) return DeviceType.PC     // Windows
+        if (554 in openPorts) return DeviceType.IOT                         // RTSP camera
+        if (22 in openPorts) return DeviceType.SERVER                       // SSH → likely server
+        if (80 in openPorts || 443 in openPorts) {
             val lastOctet = ip.substringAfterLast(".").toIntOrNull() ?: 0
             return if (lastOctet == 1 || lastOctet == 254) DeviceType.ROUTER else DeviceType.SERVER
         }

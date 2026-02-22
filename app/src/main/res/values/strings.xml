@@ -19,6 +19,7 @@
     <string name="dns_port_title">DNS &amp; Escáner de Puertos</string>
     <string name="host_url_label">Dominio o URL</string>
     <string name="port_label">Puerto</string>
+    <string name="port_label_optional">Puerto (vacío = Todos)</string>
     <string name="check_btn">Comprobar</string>
     <string name="dns_lookup_btn">Búsqueda DNS</string>
     <string name="traceroute_title">Trazado de Ruta</string>
@@ -51,4 +52,35 @@
     <string name="selected">Seleccionado</string>
     <string name="unknown_device">Dispositivo desconocido</string>
     <string name="speed_test">Test de Velocidad</string>
+    <!-- Device Detail Dialog -->
+    <string name="device_details">Detalles del Dispositivo</string>
+    <string name="general_info">Información General</string>
+    <string name="open_ports">Puertos Abiertos</string>
+    <string name="no_open_ports">No se detectaron puertos abiertos</string>
+    <string name="device_type">Tipo de Dispositivo</string>
+    <string name="mac_address">Dirección MAC</string>
+    <string name="manufacturer">Fabricante</string>
+    <string name="hostname_label">Nombre del Host</string>
+    <string name="status_reachable">Alcanzable</string>
+    <string name="status_unreachable">No alcanzable</string>
+    <string name="view_details">Ver Detalles</string>
+    <string name="close">Cerrar</string>
+    <string name="port_service_unknown">Desconocido</string>
+    <!-- Device type names -->
+    <string name="dtype_router">Router / Puerta de enlace</string>
+    <string name="dtype_mobile">Smartphone / Tablet</string>
+    <string name="dtype_pc">PC / Ordenador</string>
+    <string name="dtype_printer">Impresora</string>
+    <string name="dtype_tv">Smart TV / Streaming</string>
+    <string name="dtype_server">Servidor / NAS</string>
+    <string name="dtype_iot">IoT / Cámara</string>
+    <string name="dtype_unknown">Desconocido</string>
+    <string name="status_label">Estado</string>
+    <!-- Full port scan -->
+    <string name="full_port_scan">Escanear todos los puertos</string>
+    <string name="full_port_scan_desc">Puertos 1–65535 en paralelo</string>
+    <string name="scan_all">Escanear</string>
+    <string name="stop_scan">Detener</string>
+    <string name="scanning_ports">Escaneando puertos</string>
+    <string name="ports_found">%1$d puerto(s) abierto(s)</string>
 </resources>

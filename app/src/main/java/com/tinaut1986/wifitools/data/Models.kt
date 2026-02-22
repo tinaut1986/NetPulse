@@ -34,5 +34,6 @@ data class DeviceInfo(
     val vendor: String = "Unknown",
     val hostname: String = "Unknown",
     val isReachable: Boolean = false,
-    val deviceType: DeviceType = DeviceType.UNKNOWN
+    val deviceType: DeviceType = DeviceType.UNKNOWN,
+    val openPorts: List<Int> = emptyList()
 )

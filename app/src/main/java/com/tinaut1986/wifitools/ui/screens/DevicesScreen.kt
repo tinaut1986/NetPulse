@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,6 +30,41 @@ import com.tinaut1986.wifitools.ui.components.*
 import com.tinaut1986.wifitools.ui.theme.*
 import kotlinx.coroutines.launch
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Port → Service name mapping (common well-known ports)
+// ─────────────────────────────────────────────────────────────────────────────
+private val PORT_SERVICES = mapOf(
+    21 to "FTP",
+    22 to "SSH",
+    23 to "Telnet",
+    25 to "SMTP",
+    53 to "DNS",
+    80 to "HTTP",
+    110 to "POP3",
+    135 to "RPC",
+    139 to "NetBIOS",
+    143 to "IMAP",
+    443 to "HTTPS",
+    445 to "SMB",
+    554 to "RTSP",
+    631 to "IPP",
+    3306 to "MySQL",
+    3389 to "RDP",
+    5357 to "WSD",
+    5900 to "VNC",
+    7000 to "AirPlay",
+    8008 to "Chromecast",
+    8009 to "Chromecast",
+    8060 to "Roku",
+    8080 to "HTTP-Alt",
+    8443 to "HTTPS-Alt",
+    9100 to "JetDirect"
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main screen
+// ─────────────────────────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DevicesScreen(
     devices: List<DeviceInfo>,
@@ -37,8 +73,22 @@ fun DevicesScreen(
     onRefresh: () -> Unit
 ) {
     var selectedIp by remember { mutableStateOf<String?>(null) }
+    var detailDevice by remember { mutableStateOf<DeviceInfo?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+
+    // Bottom-sheet state
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Show the detail sheet whenever detailDevice is set
+    detailDevice?.let { device ->
+        DeviceDetailSheet(
+            device = device,
+            isCurrent = device.ip == currentIp,
+            sheetState = sheetState,
+            onDismiss = { detailDevice = null }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -64,7 +114,7 @@ fun DevicesScreen(
                     fontSize = 12.sp
                 )
             }
-            
+
             IconButton(
                 onClick = onRefresh,
                 enabled = !isScanning,
@@ -89,20 +139,35 @@ fun DevicesScreen(
             ) {
                 item {
                     Text(stringResource(R.string.subnet_scan_map), color = PrimaryBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(vertical = 4.dp))
-                    NetworkMap(devices, selectedIp, currentIp) { ip ->
-                        selectedIp = ip
-                    }
+                    NetworkMap(
+                        devices = devices,
+                        selectedIp = selectedIp,
+                        currentIp = currentIp,
+                        onIpClick = { ip -> selectedIp = ip },
+                        onViewDetails = { ip ->
+                            detailDevice = devices.find { it.ip == ip }
+                        }
+                    )
                 }
-                
+
                 item {
                     Text(stringResource(R.string.device_list), color = PrimaryBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(vertical = 4.dp))
                 }
 
                 items(devices) { device ->
                     DeviceItem(
-                        device, 
+                        device,
                         isCurrent = device.ip == currentIp,
-                        isSelected = device.ip == selectedIp
+                        isSelected = device.ip == selectedIp,
+                        onClick = {
+                            // Select in map + open detail
+                            selectedIp = device.ip
+                            detailDevice = device
+                            scope.launch {
+                                val idx = devices.indexOf(device)
+                                if (idx >= 0) listState.animateScrollToItem(idx + 2)
+                            }
+                        }
                     )
                 }
             }
@@ -110,12 +175,16 @@ fun DevicesScreen(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Network Map
+// ─────────────────────────────────────────────────────────────────────────────
 @Composable
 fun NetworkMap(
     devices: List<DeviceInfo>,
     selectedIp: String?,
     currentIp: String,
-    onIpClick: (String) -> Unit
+    onIpClick: (String) -> Unit,
+    onViewDetails: (String) -> Unit
 ) {
     val prefix = remember(devices) {
         devices.firstOrNull()?.ip?.substringBeforeLast(".")?.let { "$it." } ?: "192.168.1."
@@ -129,34 +198,27 @@ fun NetworkMap(
 
     PremiumCard {
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val totalAvailableWidth = maxWidth - labelW - 16.dp // 16dp de padding de la tarjeta
-            
-            // Aumentamos drásticamente el umbral para que en móviles normales
-            // se mantenga en 20 columnas y solo suba en pantallas muy anchas (tablets).
+            val totalAvailableWidth = maxWidth - labelW - 16.dp
+
             val columns = when {
                 totalAvailableWidth >= 16.dp * 40 -> 40
                 totalAvailableWidth >= 16.dp * 30 -> 30
                 else -> 20
             }
-            
-            // Calculamos el tamaño exacto de la celda para que sea un cuadrado perfecto
-            // (AnchoTotal - (Espacios * columnas-1)) / columnas
+
             val cellSize = (totalAvailableWidth - (gridGap * (columns - 1))) / columns
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(gridGap) 
+                verticalArrangement = Arrangement.spacedBy(gridGap)
             ) {
-                // Cabecera: Números 0..19
+                // Header row
                 Row(
                     modifier = Modifier.padding(start = labelW),
                     horizontalArrangement = Arrangement.spacedBy(gridGap)
                 ) {
                     for (col in 0 until columns) {
-                        Box(
-                            modifier = Modifier.size(cellSize),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(modifier = Modifier.size(cellSize), contentAlignment = Alignment.Center) {
                             Text(
                                 text = "$col",
                                 fontSize = if (columns <= 20) 7.sp else 6.sp,
@@ -168,23 +230,20 @@ fun NetworkMap(
                     }
                 }
 
-                // Filas de dispositivos
+                // Grid rows
                 val maxIp = 254
                 val rowCount = (maxIp / columns) + 1
 
                 for (row in 0 until rowCount) {
                     val rowStart = row * columns
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(gridGap)
                     ) {
-                        // Etiqueta de fila: 0x, 20x...
                         Box(
-                            modifier = Modifier
-                                .width(labelW)
-                                .height(cellSize),
+                            modifier = Modifier.width(labelW).height(cellSize),
                             contentAlignment = Alignment.CenterEnd
                         ) {
                             Text(
@@ -198,7 +257,7 @@ fun NetworkMap(
 
                         for (col in 0 until columns) {
                             val ipLastOctet = rowStart + col
-                            
+
                             if (ipLastOctet in 1..maxIp) {
                                 val device = activeIps[ipLastOctet]
                                 val isActive = device != null
@@ -215,7 +274,7 @@ fun NetworkMap(
 
                                 Box(
                                     modifier = Modifier
-                                        .size(cellSize) // Tamaño fijo exacto
+                                        .size(cellSize)
                                         .background(color, RoundedCornerShape(2.dp))
                                         .let {
                                             if (isSelected) it.border(1.5.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(2.dp))
@@ -227,7 +286,6 @@ fun NetworkMap(
                                         }
                                 )
                             } else {
-                                // Hueco para IPs inexistentes (0, 255)
                                 Box(modifier = Modifier.size(cellSize))
                             }
                         }
@@ -249,6 +307,13 @@ fun NetworkMap(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Icon(
+                                    imageVector = deviceTypeIcon(device.deviceType),
+                                    contentDescription = null,
+                                    tint = PrimaryBlue,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         device.hostname.ifEmpty { stringResource(R.string.unknown_device) },
@@ -258,11 +323,22 @@ fun NetworkMap(
                                     )
                                     Text(device.ip, color = PrimaryBlue, fontSize = 10.sp)
                                 }
-                                if (device.mac != "Unknown") {
+                                // "View Details" button
+                                TextButton(
+                                    onClick = { onViewDetails(ip) },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
                                     Text(
-                                        device.mac,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        fontSize = 10.sp
+                                        stringResource(R.string.view_details),
+                                        color = PrimaryBlue,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Icon(
+                                        Icons.Default.ArrowForwardIos,
+                                        contentDescription = null,
+                                        tint = PrimaryBlue,
+                                        modifier = Modifier.size(10.dp).padding(start = 2.dp)
                                     )
                                 }
                             }
@@ -287,6 +363,306 @@ fun NetworkMap(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Device Detail Bottom Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DeviceDetailSheet(
+    device: DeviceInfo,
+    isCurrent: Boolean,
+    sheetState: SheetState,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = {
+            // Custom drag handle with title
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Drag pill
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                            RoundedCornerShape(2.dp)
+                        )
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(
+                                if (isCurrent) PrimaryPurple.copy(alpha = 0.2f) else PrimaryBlue.copy(alpha = 0.15f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = deviceTypeIcon(device.deviceType),
+                            contentDescription = null,
+                            tint = if (isCurrent) PrimaryPurple else PrimaryBlue,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = device.hostname.ifEmpty { stringResource(R.string.unknown_device) },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = device.ip,
+                                color = PrimaryBlue,
+                                fontSize = 13.sp
+                            )
+                            if (isCurrent) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    color = PrimaryPurple,
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        "YOU",
+                                        color = Color.White,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 16.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                )
+            }
+        }
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 40.dp)
+        ) {
+            // ── General information ──────────────────────────────────
+            item {
+                DetailSectionTitle(stringResource(R.string.general_info))
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        DetailRow(
+                            icon = Icons.Default.Devices,
+                            label = stringResource(R.string.device_type),
+                            value = deviceTypeName(device.deviceType)
+                        )
+                        DetailDivider()
+                        DetailRow(
+                            icon = Icons.Default.Wifi,
+                            label = stringResource(R.string.ip_address),
+                            value = device.ip
+                        )
+                        DetailDivider()
+                        DetailRow(
+                            icon = Icons.Default.Tag,
+                            label = stringResource(R.string.mac_address),
+                            value = device.mac.ifBlank { "—" }.takeIf { it != "Unknown" } ?: "—"
+                        )
+                        DetailDivider()
+                        DetailRow(
+                            icon = Icons.Default.Business,
+                            label = stringResource(R.string.manufacturer),
+                            value = device.vendor.takeIf { it != "Unknown" } ?: "—"
+                        )
+                        DetailDivider()
+                        DetailRow(
+                            icon = Icons.Default.AlternateEmail,
+                            label = stringResource(R.string.hostname_label),
+                            value = device.hostname.ifEmpty { "—" }
+                        )
+                        DetailDivider()
+                        // Online / offline status
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (device.isReachable) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                                contentDescription = null,
+                                tint = if (device.isReachable) Color(0xFF00DD77) else Color(0xFFFF5566),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.status_label),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                fontSize = 13.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Surface(
+                                color = if (device.isReachable) Color(0xFF00DD77).copy(alpha = 0.15f)
+                                        else Color(0xFFFF5566).copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Text(
+                                    text = if (device.isReachable) stringResource(R.string.status_reachable)
+                                           else stringResource(R.string.status_unreachable),
+                                    color = if (device.isReachable) Color(0xFF00DD77) else Color(0xFFFF5566),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Open Ports ───────────────────────────────────────────
+            item {
+                DetailSectionTitle(stringResource(R.string.open_ports))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (device.openPorts.isEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LockOpen,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                stringResource(R.string.no_open_ports),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                } else {
+                    // Group ports into rows of chips
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(device.openPorts.sorted()) { port ->
+                            val service = PORT_SERVICES[port] ?: stringResource(R.string.port_service_unknown)
+                            PortChip(port = port, service = service)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Small composable helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun DetailSectionTitle(text: String) {
+    Text(
+        text = text,
+        color = PrimaryBlue,
+        fontWeight = FontWeight.Bold,
+        fontSize = 13.sp,
+        letterSpacing = 0.5.sp
+    )
+}
+
+@Composable
+private fun DetailDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(vertical = 2.dp),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
+        thickness = 0.5.dp
+    )
+}
+
+@Composable
+private fun DetailRow(icon: ImageVector, label: String, value: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            fontSize = 13.sp,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun PortChip(port: Int, service: String) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = PrimaryBlue.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "$port",
+                color = PrimaryBlue,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = service,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                fontSize = 10.sp
+            )
+        }
+    }
+}
+
 @Composable
 private fun LegendDot(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -303,8 +679,11 @@ private fun LegendDot(color: Color, label: String) {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Device list item (now clickable)
+// ─────────────────────────────────────────────────────────────────────────────
 @Composable
-fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
+fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean, onClick: () -> Unit = {}) {
     val backgroundColor = when {
         isSelected -> PrimaryBlue.copy(alpha = 0.2f)
         isCurrent -> PrimaryPurple.copy(alpha = 0.1f)
@@ -313,7 +692,9 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
     val borderColor = if (isSelected) PrimaryBlue else if (isCurrent) PrimaryPurple else Color.Transparent
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         border = if (isSelected || isCurrent) BorderStroke(1.dp, borderColor) else null
@@ -334,9 +715,9 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
                     tint = if (isCurrent) Color.White else PrimaryPurple
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -365,17 +746,41 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
                     Text(device.mac, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), fontSize = 10.sp)
                 }
             }
-            
-            if (device.isReachable) {
-                Surface(
-                    shape = CircleShape,
-                    color = Color(0xFF00FF88).copy(alpha = 0.1f),
-                    modifier = Modifier.size(8.dp)
-                ) {}
+
+            // Right-side: open ports count badge + chevron
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (device.openPorts.isNotEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = PrimaryBlue.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            "${device.openPorts.size}p",
+                            color = PrimaryBlue,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                if (device.isReachable) {
+                    Surface(shape = CircleShape, color = Color(0xFF00FF88).copy(alpha = 0.15f), modifier = Modifier.size(8.dp)) {}
+                }
             }
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 
 fun deviceTypeIcon(type: DeviceType): ImageVector = when (type) {
     DeviceType.ROUTER  -> Icons.Default.Router
@@ -385,5 +790,17 @@ fun deviceTypeIcon(type: DeviceType): ImageVector = when (type) {
     DeviceType.TV      -> Icons.Default.Tv
     DeviceType.SERVER  -> Icons.Default.Storage
     DeviceType.IOT     -> Icons.Default.Sensors
-    DeviceType.UNKNOWN -> Icons.Default.Devices  // Generic device icon
+    DeviceType.UNKNOWN -> Icons.Default.Devices
+}
+
+@Composable
+private fun deviceTypeName(type: DeviceType): String = when (type) {
+    DeviceType.ROUTER  -> stringResource(R.string.dtype_router)
+    DeviceType.MOBILE  -> stringResource(R.string.dtype_mobile)
+    DeviceType.PC      -> stringResource(R.string.dtype_pc)
+    DeviceType.PRINTER -> stringResource(R.string.dtype_printer)
+    DeviceType.TV      -> stringResource(R.string.dtype_tv)
+    DeviceType.SERVER  -> stringResource(R.string.dtype_server)
+    DeviceType.IOT     -> stringResource(R.string.dtype_iot)
+    DeviceType.UNKNOWN -> stringResource(R.string.dtype_unknown)
 }

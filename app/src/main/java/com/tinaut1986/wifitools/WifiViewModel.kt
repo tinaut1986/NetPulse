@@ -35,6 +35,17 @@ class WifiViewModel(application: Application) : AndroidViewModel(application) {
     private val _toolResult = MutableStateFlow<String?>(null)
     val toolResult: StateFlow<String?> = _toolResult
 
+    private val _isPortScanning = MutableStateFlow(false)
+    val isPortScanning: StateFlow<Boolean> = _isPortScanning
+
+    private val _portScanProgress = MutableStateFlow(0f)
+    val portScanProgress: StateFlow<Float> = _portScanProgress
+
+    private val _portScanResults = MutableStateFlow<List<Int>>(emptyList())
+    val portScanResults: StateFlow<List<Int>> = _portScanResults
+
+    private var portScanJob: kotlinx.coroutines.Job? = null
+
     private val _publicIp = MutableStateFlow<String>("Loading...")
     val publicIp: StateFlow<String> = _publicIp
 
@@ -156,6 +167,34 @@ class WifiViewModel(application: Application) : AndroidViewModel(application) {
             val open = pingTool.checkPort(host, port)
             _toolResult.value = if (open) "Port $port is OPEN on $host" else "Port $port is CLOSED on $host"
         }
+    }
+
+    fun runFullPortScan(host: String) {
+        if (_isPortScanning.value) return
+        portScanJob = viewModelScope.launch {
+            _isPortScanning.value = true
+            _portScanProgress.value = 0f
+            _portScanResults.value = emptyList()
+            _toolResult.value = "Scanning all ports on $host..."
+
+            val open = pingTool.scanAllPorts(host) { progress, found ->
+                _portScanProgress.value = progress
+                _portScanResults.value = found
+            }
+
+            _portScanResults.value = open
+            _toolResult.value = if (open.isEmpty()) {
+                "No open ports found on $host"
+            } else {
+                "Found ${open.size} open port(s) on $host:\n" + open.joinToString(", ")
+            }
+            _isPortScanning.value = false
+        }
+    }
+
+    fun stopPortScan() {
+        portScanJob?.cancel()
+        _isPortScanning.value = false
     }
 
     fun runDnsLookup(host: String) {
