@@ -21,16 +21,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import android.content.Context
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.navigation.compose.currentBackStackEntryAsState
 import android.content.res.Configuration
 import java.util.Locale
 import com.tinaut1986.wifitools.ui.screens.DevicesScreen
 import com.tinaut1986.wifitools.ui.screens.HomeScreen
 import com.tinaut1986.wifitools.ui.screens.ToolsScreen
 import com.tinaut1986.wifitools.ui.screens.SettingsScreen
+import com.tinaut1986.wifitools.ui.screens.SpeedTestScreen
 import com.tinaut1986.wifitools.ui.theme.WifiToolsTheme
-import com.tinaut1986.wifitools.ui.theme.BackgroundDark
-import com.tinaut1986.wifitools.ui.theme.CardBackground
 import com.tinaut1986.wifitools.ui.theme.PrimaryBlue
 import kotlinx.coroutines.launch
 
@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
+    ) { _ ->
         // Handle permissions results if needed
     }
 
@@ -53,13 +53,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val context = LocalContext.current
+            val currentConfiguration = LocalConfiguration.current
             val settingsManager = remember { SettingsManager(context) }
             val currentTheme by settingsManager.theme
             val currentLanguage by settingsManager.language
 
-            val locale = remember(currentLanguage) { Locale(currentLanguage) }
-            val localizedContext = remember(currentLanguage) {
-                val config = Configuration(context.resources.configuration)
+            val locale = remember(currentLanguage) { Locale.forLanguageTag(currentLanguage) }
+            val localizedContext = remember(currentLanguage, currentConfiguration) {
+                val config = Configuration(currentConfiguration)
                 config.setLocale(locale)
                 context.createConfigurationContext(config)
             }
@@ -70,7 +71,8 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                     val scope = rememberCoroutineScope()
-                    var currentRoute by remember { mutableStateOf("home") }
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentRoute = navBackStackEntry?.destination?.route ?: "home"
 
                     ModalNavigationDrawer(
                         drawerState = drawerState,
@@ -92,7 +94,6 @@ class MainActivity : ComponentActivity() {
                                     label = { Text(stringResource(R.string.dashboard)) },
                                     selected = currentRoute == "home",
                                     onClick = {
-                                        currentRoute = "home"
                                         navController.navigate("home")
                                         scope.launch { drawerState.close() }
                                     },
@@ -111,7 +112,6 @@ class MainActivity : ComponentActivity() {
                                     label = { Text(stringResource(R.string.network_map)) },
                                     selected = currentRoute == "devices",
                                     onClick = {
-                                        currentRoute = "devices"
                                         navController.navigate("devices")
                                         scope.launch { drawerState.close() }
                                     },
@@ -130,8 +130,25 @@ class MainActivity : ComponentActivity() {
                                     label = { Text(stringResource(R.string.tools)) },
                                     selected = currentRoute == "tools",
                                     onClick = {
-                                        currentRoute = "tools"
                                         navController.navigate("tools")
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                    colors = NavigationDrawerItemDefaults.colors(
+                                        unselectedContainerColor = Color.Transparent,
+                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+                                        selectedIconColor = PrimaryBlue,
+                                        selectedTextColor = PrimaryBlue,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                )
+                                NavigationDrawerItem(
+                                    icon = { Icon(Icons.Default.Speed, contentDescription = null) },
+                                    label = { Text(stringResource(R.string.speed_test)) },
+                                    selected = currentRoute == "speed_test",
+                                    onClick = {
+                                        navController.navigate("speed_test")
                                         scope.launch { drawerState.close() }
                                     },
                                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
@@ -149,7 +166,6 @@ class MainActivity : ComponentActivity() {
                                     label = { Text(stringResource(R.string.settings)) },
                                     selected = currentRoute == "settings",
                                     onClick = {
-                                        currentRoute = "settings"
                                         navController.navigate("settings")
                                         scope.launch { drawerState.close() }
                                     },
@@ -219,6 +235,21 @@ class MainActivity : ComponentActivity() {
                                         onPortCheck = { host, port -> viewModel.runPortCheck(host, port) },
                                         onDnsLookup = { viewModel.runDnsLookup(it) },
                                         onTraceroute = { viewModel.runTraceroute(it) }
+                                    )
+                                }
+                                composable("speed_test") {
+                                    val isTesting by viewModel.isTestingSpeed.collectAsState()
+                                    val progress by viewModel.speedTestProgress.collectAsState()
+                                    val downloadSpeed by viewModel.downloadSpeed.collectAsState()
+                                    val uploadSpeed by viewModel.uploadSpeed.collectAsState()
+                                    val phase by viewModel.speedTestPhase.collectAsState()
+                                    SpeedTestScreen(
+                                        isTesting = isTesting,
+                                        progress = progress,
+                                        downloadSpeed = downloadSpeed,
+                                        uploadSpeed = uploadSpeed,
+                                        phase = phase,
+                                        onStartTest = { viewModel.runSpeedTest() }
                                     )
                                 }
                                 composable("settings") {

@@ -15,6 +15,7 @@ class WifiViewModel(application: Application) : AndroidViewModel(application) {
     private val wifiScanner = WifiScanner(application)
     private val networkScanner = NetworkScanner()
     private val pingTool = PingTool()
+    private val speedTestTool = SpeedTestTool()
 
     val wifiInfo = wifiScanner.wifiState
     val signalHistory = mutableStateListOf<Int>()
@@ -36,6 +37,21 @@ class WifiViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _publicIp = MutableStateFlow<String>("Loading...")
     val publicIp: StateFlow<String> = _publicIp
+
+    private val _isTestingSpeed = MutableStateFlow(false)
+    val isTestingSpeed: StateFlow<Boolean> = _isTestingSpeed
+
+    private val _speedTestProgress = MutableStateFlow(0f)
+    val speedTestProgress: StateFlow<Float> = _speedTestProgress
+
+    private val _downloadSpeed = MutableStateFlow<Double?>(null)
+    val downloadSpeed: StateFlow<Double?> = _downloadSpeed
+
+    private val _uploadSpeed = MutableStateFlow<Double?>(null)
+    val uploadSpeed: StateFlow<Double?> = _uploadSpeed
+
+    private val _speedTestPhase = MutableStateFlow("") // "download", "upload", ""
+    val speedTestPhase: StateFlow<String> = _speedTestPhase
 
     private var pingJob: kotlinx.coroutines.Job? = null
 
@@ -161,6 +177,34 @@ class WifiViewModel(application: Application) : AndroidViewModel(application) {
                 _toolResult.value = results.joinToString("\n")
             }
             _isPinging.value = false
+        }
+    }
+
+    fun runSpeedTest() {
+        if (_isTestingSpeed.value) return
+        viewModelScope.launch {
+            _isTestingSpeed.value = true
+            _speedTestProgress.value = 0f
+            _downloadSpeed.value = null
+            _uploadSpeed.value = null
+            
+            // Phase 1: Download
+            _speedTestPhase.value = "download"
+            val dSpeed = speedTestTool.runDownloadTest { progress ->
+                _speedTestProgress.value = progress
+            }
+            _downloadSpeed.value = if (dSpeed >= 0) dSpeed else 0.0
+            
+            // Phase 2: Upload
+            _speedTestPhase.value = "upload"
+            _speedTestProgress.value = 0f
+            val uSpeed = speedTestTool.runUploadTest { progress ->
+                _speedTestProgress.value = progress
+            }
+            _uploadSpeed.value = if (uSpeed >= 0) uSpeed else 0.0
+            
+            _speedTestPhase.value = "finished"
+            _isTestingSpeed.value = false
         }
     }
 }
