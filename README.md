@@ -1,8 +1,10 @@
+<p align="center">
+  <img src="app/src/main/res/drawable/ic_logo.png" width="128" height="128" />
+</p>
+
 # NetPulse
 
 **NetPulse** is a powerful, modern, and high-performance network diagnostic and discovery application for Android. Built with a focus on high-end aesthetics and detailed technical insights, it provides everything you need to understand and troubleshoot your network.
-
-![NetPulse Banner](https://raw.githubusercontent.com/tinaut1986/NetPulse/main/app/src/main/res/drawable/ic_logo.png) (Logo placeholder)
 
 ## ✨ Features
 
