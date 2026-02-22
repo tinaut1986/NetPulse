@@ -25,6 +25,15 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Rename the output APK
+            @Suppress("DEPRECATION")
+            applicationVariants.all {
+                outputs.all {
+                    val output = this as? com.android.build.gradle.internal.api.ApkVariantOutputImpl
+                    output?.outputFileName = "NetPulse-v${defaultConfig.versionName}.apk"
+                }
+            }
         }
     }
     compileOptions {
