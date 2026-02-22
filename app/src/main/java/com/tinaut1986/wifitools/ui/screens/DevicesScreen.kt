@@ -116,100 +116,189 @@ fun NetworkMap(
     currentIp: String,
     onIpClick: (String) -> Unit
 ) {
-    val prefix = remember(devices) { 
+    val prefix = remember(devices) {
         devices.firstOrNull()?.ip?.substringBeforeLast(".")?.let { "$it." } ?: "192.168.1."
     }
-    val activeIps = remember(devices) { 
+    val activeIps = remember(devices) {
         devices.associateBy { it.ip.substringAfterLast(".").toIntOrNull() ?: -1 }
     }
 
+    val labelW = 42.dp
+    val gridGap = 2.dp
+
     PremiumCard {
-        Column {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Column {
-                    for (row in 0 until 16) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val totalAvailableWidth = maxWidth - labelW - 16.dp // 16dp de padding de la tarjeta
+            
+            // Aumentamos drásticamente el umbral para que en móviles normales
+            // se mantenga en 20 columnas y solo suba en pantallas muy anchas (tablets).
+            val columns = when {
+                totalAvailableWidth >= 16.dp * 40 -> 40
+                totalAvailableWidth >= 16.dp * 30 -> 30
+                else -> 20
+            }
+            
+            // Calculamos el tamaño exacto de la celda para que sea un cuadrado perfecto
+            // (AnchoTotal - (Espacios * columnas-1)) / columnas
+            val cellSize = (totalAvailableWidth - (gridGap * (columns - 1))) / columns
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(gridGap) 
+            ) {
+                // Cabecera: Números 0..19
+                Row(
+                    modifier = Modifier.padding(start = labelW),
+                    horizontalArrangement = Arrangement.spacedBy(gridGap)
+                ) {
+                    for (col in 0 until columns) {
+                        Box(
+                            modifier = Modifier.size(cellSize),
+                            contentAlignment = Alignment.Center
                         ) {
-                            for (col in 0 until 16) {
-                                val ipLastOctet = row * 16 + col
-                                if (ipLastOctet in 1..254) {
-                                    val device = activeIps[ipLastOctet]
-                                    val isActive = device != null
-                                    val fullIp = "$prefix$ipLastOctet"
-                                    val isSelected = selectedIp == fullIp
-                                    val isLocal = fullIp == currentIp
-                                    
-                                    val color = when {
-                                        isSelected -> MaterialTheme.colorScheme.primary
-                                        isLocal -> PrimaryPurple
-                                        isActive -> PrimaryBlue
-                                        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                                    }
-                                    
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(1.dp)
-                                            .size(14.dp)
-                                            .background(color, RoundedCornerShape(2.dp))
-                                            .let {
-                                                if (isSelected) it.border(1.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(2.dp))
-                                                else it
-                                            }
-                                            .let {
-                                                if (isActive) it.clickable { onIpClick(fullIp) }
-                                                else it
-                                            }
+                            Text(
+                                text = "$col",
+                                fontSize = if (columns <= 20) 7.sp else 6.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+
+                // Filas de dispositivos
+                val maxIp = 254
+                val rowCount = (maxIp / columns) + 1
+
+                for (row in 0 until rowCount) {
+                    val rowStart = row * columns
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(gridGap)
+                    ) {
+                        // Etiqueta de fila: 0x, 20x...
+                        Box(
+                            modifier = Modifier
+                                .width(labelW)
+                                .height(cellSize),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Text(
+                                text = "${rowStart}x",
+                                fontSize = 8.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(end = 6.dp)
+                            )
+                        }
+
+                        for (col in 0 until columns) {
+                            val ipLastOctet = rowStart + col
+                            
+                            if (ipLastOctet in 1..maxIp) {
+                                val device = activeIps[ipLastOctet]
+                                val isActive = device != null
+                                val fullIp = "$prefix$ipLastOctet"
+                                val isSelected = selectedIp == fullIp
+                                val isLocal = fullIp == currentIp
+
+                                val color = when {
+                                    isSelected -> MaterialTheme.colorScheme.primary
+                                    isLocal    -> PrimaryPurple
+                                    isActive   -> PrimaryBlue
+                                    else       -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(cellSize) // Tamaño fijo exacto
+                                        .background(color, RoundedCornerShape(2.dp))
+                                        .let {
+                                            if (isSelected) it.border(1.5.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(2.dp))
+                                            else it
+                                        }
+                                        .let {
+                                            if (isActive) it.clickable { onIpClick(fullIp) }
+                                            else it
+                                        }
+                                )
+                            } else {
+                                // Hueco para IPs inexistentes (0, 255)
+                                Box(modifier = Modifier.size(cellSize))
+                            }
+                        }
+                    }
+                }
+
+                // Bubble info for selected device
+                selectedIp?.let { ip ->
+                    val device = devices.find { it.ip == ip }
+                    if (device != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.5f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        device.hostname.ifEmpty { stringResource(R.string.unknown_device) },
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
                                     )
-                                } else {
-                                    Spacer(Modifier.size(16.dp))
+                                    Text(device.ip, color = PrimaryBlue, fontSize = 10.sp)
+                                }
+                                if (device.mac != "Unknown") {
+                                    Text(
+                                        device.mac,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        fontSize = 10.sp
+                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                // Bubble Info
-                selectedIp?.let { ip ->
-                    val device = devices.find { it.ip == ip }
-                    if (device != null) {
-                        Surface(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 8.dp),
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.5f))
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(device.hostname.ifEmpty { stringResource(R.string.unknown_device) }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                Text(device.ip, color = PrimaryBlue, fontSize = 10.sp)
-                                if (device.mac != "Unknown") {
-                                    Text(device.mac, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(10.dp).background(PrimaryPurple, RoundedCornerShape(2.dp)))
-                    Text(" " + stringResource(R.string.you), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
-                    Box(modifier = Modifier.size(10.dp).background(PrimaryBlue, RoundedCornerShape(2.dp)))
-                    Text(" " + stringResource(R.string.active), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
-                    Box(modifier = Modifier.size(10.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
-                    Text(" " + stringResource(R.string.selected), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 10.sp, modifier = Modifier.padding(end = 12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Legend
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    LegendDot(color = PrimaryPurple, label = stringResource(R.string.you))
+                    LegendDot(color = PrimaryBlue, label = stringResource(R.string.active))
+                    LegendDot(color = MaterialTheme.colorScheme.primary, label = stringResource(R.string.selected))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LegendDot(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(color, RoundedCornerShape(2.dp))
+        )
+        Text(
+            " $label",
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            fontSize = 10.sp
+        )
     }
 }
 
