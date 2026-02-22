@@ -26,10 +26,13 @@ data class WifiInfo(
     }
 }
 
+enum class DeviceType { ROUTER, PC, MOBILE, PRINTER, TV, SERVER, IOT, UNKNOWN }
+
 data class DeviceInfo(
     val ip: String,
     val mac: String = "Unknown",
     val vendor: String = "Unknown",
     val hostname: String = "Unknown",
-    val isReachable: Boolean = false
+    val isReachable: Boolean = false,
+    val deviceType: DeviceType = DeviceType.UNKNOWN
 )

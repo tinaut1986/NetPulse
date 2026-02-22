@@ -11,8 +11,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Computer
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.*
+import com.tinaut1986.wifitools.data.DeviceType
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.tinaut1986.wifitools.R
 import com.tinaut1986.wifitools.data.DeviceInfo
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.tinaut1986.wifitools.ui.components.*
 import com.tinaut1986.wifitools.ui.theme.*
 import kotlinx.coroutines.launch
@@ -328,8 +329,8 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    if (isCurrent) Icons.Default.Computer else Icons.Default.Computer, 
-                    contentDescription = null, 
+                    imageVector = deviceTypeIcon(device.deviceType),
+                    contentDescription = null,
                     tint = if (isCurrent) Color.White else PrimaryPurple
                 )
             }
@@ -339,8 +340,8 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        device.hostname.ifEmpty { stringResource(R.string.unknown_device) }, 
-                        color = MaterialTheme.colorScheme.onSurface, 
+                        device.hostname.ifEmpty { stringResource(R.string.unknown_device) },
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
@@ -354,9 +355,14 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
                         }
                     }
                 }
-                Text(device.ip, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(device.ip, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                    if (device.vendor != "Unknown") {
+                        Text(" · ${device.vendor}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), fontSize = 11.sp)
+                    }
+                }
                 if (device.mac != "Unknown") {
-                    Text(device.mac, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f), fontSize = 11.sp)
+                    Text(device.mac, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), fontSize = 10.sp)
                 }
             }
             
@@ -369,4 +375,15 @@ fun DeviceItem(device: DeviceInfo, isCurrent: Boolean, isSelected: Boolean) {
             }
         }
     }
+}
+
+fun deviceTypeIcon(type: DeviceType): ImageVector = when (type) {
+    DeviceType.ROUTER  -> Icons.Default.Router
+    DeviceType.MOBILE  -> Icons.Default.Smartphone
+    DeviceType.PC      -> Icons.Default.Computer
+    DeviceType.PRINTER -> Icons.Default.Print
+    DeviceType.TV      -> Icons.Default.Tv
+    DeviceType.SERVER  -> Icons.Default.Storage
+    DeviceType.IOT     -> Icons.Default.Sensors
+    DeviceType.UNKNOWN -> Icons.Default.Devices  // Generic device icon
 }
