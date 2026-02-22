@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WifiTools"
+rootProject.name = "NetPulse"
 include(":app")

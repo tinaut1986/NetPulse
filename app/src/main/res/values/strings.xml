@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WiFi Tools</string>
+    <string name="app_name">NetPulse</string>
     <string name="dashboard">Panel de Control</string>
     <string name="network_map">Mapa de Red</string>
     <string name="tools">Herramientas</string>

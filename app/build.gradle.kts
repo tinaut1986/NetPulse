@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.tinaut1986.wifitools"
+    namespace = "com.tinaut1986.netpulse"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.tinaut1986.wifitools"
+        applicationId = "com.tinaut1986.netpulse"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
