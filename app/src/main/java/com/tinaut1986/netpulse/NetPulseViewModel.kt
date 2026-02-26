@@ -8,6 +8,7 @@ import com.tinaut1986.netpulse.data.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
@@ -16,15 +17,45 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
     private val networkScanner = NetworkScanner()
     private val pingTool = PingTool()
     private val speedTestTool = SpeedTestTool()
+    private val diagnosticTool = NetworkDiagnosticTool()
+    private val historyManager = DiagnosticHistoryManager(application)
 
     val wifiInfo = wifiScanner.wifiState
     val signalHistory = mutableStateListOf<Int>()
+
+    // Live latency samples for the quality screen chart
+    val liveLatencySamples = mutableStateListOf<PingSample>()
+
+    // Diagnosis state
+    private val _diagnosticReport = MutableStateFlow<DiagnosticReport?>(null)
+    val diagnosticReport: StateFlow<DiagnosticReport?> = _diagnosticReport
+
+    private val _isDiagnosing = MutableStateFlow(false)
+    val isDiagnosing: StateFlow<Boolean> = _isDiagnosing
+
+    private val _diagnosisStep = MutableStateFlow("")
+    val diagnosisStep: StateFlow<String> = _diagnosisStep
+
+    private var diagnosisJob: kotlinx.coroutines.Job? = null
+
+    // History
+    private val _historyList = MutableStateFlow<List<SavedDiagnostic>>(emptyList())
+    val historyList: StateFlow<List<SavedDiagnostic>> = _historyList
+
+    private val _detailEntry = MutableStateFlow<SavedDiagnostic?>(null)
+    val detailEntry: StateFlow<SavedDiagnostic?> = _detailEntry
+
+    private val _detailReport = MutableStateFlow<DiagnosticReport?>(null)
+    val detailReport: StateFlow<DiagnosticReport?> = _detailReport
     
     private val _devices = MutableStateFlow<List<DeviceInfo>>(emptyList())
     val devices: StateFlow<List<DeviceInfo>> = _devices
     
     private val _isScanning = MutableStateFlow(false)
-    val isScanning: StateFlow<Boolean> = _isScanning
+    val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
+
+    private val _scanProgress = MutableStateFlow(0f)
+    val scanProgress: StateFlow<Float> = _scanProgress.asStateFlow()
     
     private val _pingResult = MutableStateFlow<String?>(null)
     val pingResult: StateFlow<String?> = _pingResult
@@ -113,6 +144,11 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
                     val packetLoss = ((testCount - successCount).toFloat() / testCount) * 100
                     val avgLatency = if (successCount > 0) totalLatency / successCount else 0L
                     wifiScanner.updateNetworkQuality(packetLoss, avgLatency)
+
+                    // Add to live latency chart
+                    val sampleLatency = if (successCount > 0) avgLatency else -1L
+                    liveLatencySamples.add(PingSample(System.currentTimeMillis(), sampleLatency))
+                    if (liveLatencySamples.size > 60) liveLatencySamples.removeAt(0)
                 }
                 
                 delay(3000) // Increased delay slightly to accommodate pings
@@ -123,10 +159,14 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
     fun scanDevices() {
         viewModelScope.launch {
             _isScanning.value = true
+            _scanProgress.value = 0f
             val gateway = wifiInfo.value.gateway
             if (gateway != "0.0.0.0") {
-                _devices.value = networkScanner.scanSubnet(gateway)
+                _devices.value = networkScanner.scanSubnet(gateway) { progress ->
+                    _scanProgress.value = progress
+                }
             }
+            _scanProgress.value = 1f
             _isScanning.value = false
         }
     }
@@ -245,5 +285,98 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
             _speedTestPhase.value = "finished"
             _isTestingSpeed.value = false
         }
+    }
+
+    fun runDiagnosis() {
+        if (_isDiagnosing.value) return
+        diagnosisJob = viewModelScope.launch {
+            _isDiagnosing.value = true
+            _diagnosticReport.value = null
+            val info = wifiInfo.value
+            val report = diagnosticTool.runFullDiagnostic(
+                gatewayIp = info.gateway,
+                dns1Ip = info.dns1,
+                pingCount = 10
+            ) { step ->
+                _diagnosisStep.value = step
+            }
+            _diagnosticReport.value = report
+            // Auto-save to history
+            historyManager.save(report, wifiInfo.value.ssid)
+            refreshHistory()
+            _isDiagnosing.value = false
+            _diagnosisStep.value = ""
+        }
+    }
+
+    fun stopDiagnosis() {
+        diagnosisJob?.cancel()
+        _isDiagnosing.value = false
+        _diagnosisStep.value = ""
+    }
+
+    fun refreshHistory() {
+        _historyList.value = historyManager.list()
+    }
+
+    fun loadDetail(id: String) {
+        val pair = historyManager.load(id) ?: return
+        _detailReport.value = pair.first
+        _detailEntry.value = _historyList.value.find { it.id == id }
+    }
+
+    fun clearDetail() {
+        _detailEntry.value = null
+        _detailReport.value = null
+    }
+
+    fun deleteHistoryEntry(id: String) {
+        historyManager.delete(id)
+        refreshHistory()
+    }
+
+    fun deleteAllHistory() {
+        historyManager.deleteAll()
+        refreshHistory()
+    }
+
+    fun exportDiagnostic(id: String) {
+        exportMultipleDiagnostics(listOf(id))
+    }
+
+    fun deleteMultipleDiagnostics(ids: List<String>) {
+        historyManager.deleteMultiple(ids)
+        refreshHistory()
+    }
+
+    fun exportMultipleDiagnostics(ids: List<String>) {
+        viewModelScope.launch {
+            val file = historyManager.writeMultipleExportFile(ids) ?: return@launch
+            shareFile(file, if (ids.size == 1) "Exportar diagnóstico" else "Exportar ${ids.size} diagnósticos")
+        }
+    }
+
+    fun exportAllDiagnostics() {
+        val ids = _historyList.value.map { it.id }
+        if (ids.isEmpty()) return
+        exportMultipleDiagnostics(ids)
+    }
+
+    private fun shareFile(file: java.io.File, chooserTitle: String) {
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            getApplication(),
+            "${getApplication<android.app.Application>().packageName}.fileprovider",
+            file
+        )
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        getApplication<android.app.Application>().startActivity(
+            android.content.Intent.createChooser(intent, chooserTitle)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
     }
 }

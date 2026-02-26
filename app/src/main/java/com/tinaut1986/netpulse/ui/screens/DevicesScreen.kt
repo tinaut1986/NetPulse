@@ -1,5 +1,8 @@
 package com.tinaut1986.netpulse.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -69,6 +72,7 @@ private val PORT_SERVICES = mapOf(
 fun DevicesScreen(
     devices: List<DeviceInfo>,
     isScanning: Boolean,
+    scanProgress: Float,
     currentIp: String,
     onRefresh: () -> Unit
 ) {
@@ -138,6 +142,31 @@ fun DevicesScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
+                    // Scanning progress bar
+                    AnimatedVisibility(
+                        visible = isScanning,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                            LinearProgressIndicator(
+                                progress = { scanProgress },
+                                modifier = Modifier.fillMaxWidth().height(6.dp),
+                                color = PrimaryBlue,
+                                trackColor = PrimaryBlue.copy(alpha = 0.1f),
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "${(scanProgress * 100).toInt()}%",
+                                color = PrimaryBlue,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.align(Alignment.End)
+                            )
+                        }
+                    }
+
                     Text(stringResource(R.string.subnet_scan_map), color = PrimaryBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(vertical = 4.dp))
                     NetworkMap(
                         devices = devices,

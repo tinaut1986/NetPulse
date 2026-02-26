@@ -11,6 +11,8 @@
 - **📊 Network Dashboard:** Real-time monitoring of Wi-Fi signal strength, latency, and packet loss with dynamic live graphing.
 - **🗺️ Interactive Device Mapping:** A visual representation of your subnet showing connected nodes. Tap any node to see deep technical details.
 - **🔍 Advanced Device Discovery:** Goes beyond IP addresses. Identifies device types (Smartphone, Router, PC, IoT), manufacturers, MAC addresses, and hostnames.
+- **🔍 Network Quality Diagnosis:** Comprehensive testing of jitter, latency, and DNS health with advanced scoring and history tracking.
+- **📤 Smart Report Export:** Export single or multiple diagnostic results to formatted text files for external analysis.
 - **🛡️ Comprehensive Port Scanner:**
   - **Single Port Check:** Quickly verify common services.
   - **Full Port Scan (1-65535):** Scan the entire range in parallel batches for extreme speed, with real-time service discovery.

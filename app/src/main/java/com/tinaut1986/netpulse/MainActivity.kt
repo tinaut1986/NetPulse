@@ -33,6 +33,9 @@ import com.tinaut1986.netpulse.ui.screens.HomeScreen
 import com.tinaut1986.netpulse.ui.screens.ToolsScreen
 import com.tinaut1986.netpulse.ui.screens.SettingsScreen
 import com.tinaut1986.netpulse.ui.screens.SpeedTestScreen
+import com.tinaut1986.netpulse.ui.screens.NetworkQualityScreen
+import com.tinaut1986.netpulse.ui.screens.DiagnosticHistoryScreen
+import com.tinaut1986.netpulse.ui.screens.DiagnosticDetailScreen
 import com.tinaut1986.netpulse.ui.theme.NetPulseTheme
 import com.tinaut1986.netpulse.ui.theme.PrimaryBlue
 import kotlinx.coroutines.launch
@@ -176,6 +179,24 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                                 NavigationDrawerItem(
+                                    icon = { Icon(Icons.Default.NetworkCheck, contentDescription = null) },
+                                    label = { Text(stringResource(R.string.network_quality)) },
+                                    selected = currentRoute == "network_quality",
+                                    onClick = {
+                                        navController.navigate("network_quality")
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                    colors = NavigationDrawerItemDefaults.colors(
+                                        unselectedContainerColor = Color.Transparent,
+                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+                                        selectedIconColor = PrimaryBlue,
+                                        selectedTextColor = PrimaryBlue,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                )
+                                NavigationDrawerItem(
                                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                                     label = { Text(stringResource(R.string.settings)) },
                                     selected = currentRoute == "settings",
@@ -225,10 +246,12 @@ class MainActivity : ComponentActivity() {
                                 composable("devices") {
                                     val devices by viewModel.devices.collectAsState()
                                     val isScanning by viewModel.isScanning.collectAsState()
+                                    val scanProgress by viewModel.scanProgress.collectAsState()
                                     val wifiInfo by viewModel.wifiInfo.collectAsState()
                                     DevicesScreen(
                                         devices = devices,
                                         isScanning = isScanning,
+                                        scanProgress = scanProgress,
                                         currentIp = wifiInfo.ipAddress,
                                         onRefresh = { viewModel.scanDevices() }
                                     )
@@ -281,6 +304,54 @@ class MainActivity : ComponentActivity() {
                                         currentLanguage = currentLanguage,
                                         onLanguageChange = { settingsManager.setLanguage(it) }
                                     )
+                                }
+                                composable("network_quality") {
+                                    val report by viewModel.diagnosticReport.collectAsState()
+                                    val isDiagnosing by viewModel.isDiagnosing.collectAsState()
+                                    val diagnosisStep by viewModel.diagnosisStep.collectAsState()
+                                    NetworkQualityScreen(
+                                        report = report,
+                                        liveLatencySamples = viewModel.liveLatencySamples,
+                                        isDiagnosing = isDiagnosing,
+                                        diagnosisStep = diagnosisStep,
+                                        onStartDiagnosis = { viewModel.runDiagnosis() },
+                                        onStopDiagnosis = { viewModel.stopDiagnosis() },
+                                        onHistoryClick = {
+                                            viewModel.refreshHistory()
+                                            navController.navigate("history")
+                                        }
+                                    )
+                                }
+                                composable("history") {
+                                    val history by viewModel.historyList.collectAsState()
+                                    DiagnosticHistoryScreen(
+                                        entries = history,
+                                        onOpen = { id ->
+                                            viewModel.loadDetail(id)
+                                            navController.navigate("history_detail")
+                                        },
+                                        onDelete = { id -> viewModel.deleteHistoryEntry(id) },
+                                        onDeleteAll = { viewModel.deleteAllHistory() },
+                                        onExport = { id -> viewModel.exportDiagnostic(id) },
+                                        onDeleteMultiple = { ids -> viewModel.deleteMultipleDiagnostics(ids) },
+                                        onExportMultiple = { ids -> viewModel.exportMultipleDiagnostics(ids) },
+                                        onExportAll = { viewModel.exportAllDiagnostics() }
+                                    )
+                                }
+                                composable("history_detail") {
+                                    val entry by viewModel.detailEntry.collectAsState()
+                                    val report by viewModel.detailReport.collectAsState()
+                                    if (entry != null && report != null) {
+                                        DiagnosticDetailScreen(
+                                            entry = entry!!,
+                                            report = report!!,
+                                            onExport = { viewModel.exportDiagnostic(entry!!.id) },
+                                            onBack = {
+                                                viewModel.clearDetail()
+                                                navController.popBackStack()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

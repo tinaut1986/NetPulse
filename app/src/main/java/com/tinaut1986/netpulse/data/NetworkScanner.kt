@@ -11,6 +11,7 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicInteger
 
 class NetworkScanner {
 
@@ -21,15 +22,17 @@ class NetworkScanner {
         7000, 8008, 8009, 8060, 8080, 8443, 9100
     )
 
-    suspend fun scanSubnet(gateway: String): List<DeviceInfo> = withContext(Dispatchers.IO) {
+    suspend fun scanSubnet(gateway: String, onProgress: (Float) -> Unit = {}): List<DeviceInfo> = withContext(Dispatchers.IO) {
         val prefix = gateway.substringBeforeLast(".") + "."
+        val total = 254
+        val completed = AtomicInteger(0)
 
-        val jobs = (1..254).map { i ->
+        val jobs = (1..total).map { i ->
             async {
                 val ip = prefix + i
                 try {
                     val address = InetAddress.getByName(ip)
-                    if (address.isReachable(500)) {
+                    val result = if (address.isReachable(500)) {
                         // 1. Try NetBIOS (gives real name + MAC for Windows/NAS)
                         val (nbName, nbMac) = getNetbiosInfo(ip)
 
@@ -53,7 +56,15 @@ class NetworkScanner {
                             openPorts = openPorts
                         )
                     } else null
-                } catch (e: Exception) { null }
+                    
+                    val currentDone = completed.incrementAndGet()
+                    onProgress(currentDone.toFloat() / total)
+                    result
+                } catch (e: Exception) {
+                    val currentDone = completed.incrementAndGet()
+                    onProgress(currentDone.toFloat() / total)
+                    null
+                }
             }
         }
         jobs.awaitAll().filterNotNull()
