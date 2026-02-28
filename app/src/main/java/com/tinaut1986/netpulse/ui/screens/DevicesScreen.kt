@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.*
 import com.tinaut1986.netpulse.data.DeviceType
 import androidx.compose.material3.*
@@ -90,7 +91,7 @@ fun DevicesScreen(
             device = device,
             isCurrent = device.ip == currentIp,
             sheetState = sheetState,
-            onDismiss = { detailDevice = null }
+            onDismiss = { }
         )
     }
 
@@ -105,18 +106,27 @@ fun DevicesScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.connected_devices),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Devices,
+                    contentDescription = null,
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(32.dp)
                 )
-                Text(
-                    text = stringResource(R.string.devices_found, devices.size),
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                    fontSize = 12.sp
-                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = stringResource(R.string.network_map),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(R.string.devices_found, devices.size),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        fontSize = 12.sp
+                    )
+                }
             }
 
             IconButton(
@@ -174,7 +184,7 @@ fun DevicesScreen(
                         currentIp = currentIp,
                         onIpClick = { ip -> selectedIp = ip },
                         onViewDetails = { ip ->
-                            detailDevice = devices.find { it.ip == ip }
+                            devices.find { it.ip == ip }
                         }
                     )
                 }
@@ -191,7 +201,6 @@ fun DevicesScreen(
                         onClick = {
                             // Select in map + open detail
                             selectedIp = device.ip
-                            detailDevice = device
                             scope.launch {
                                 val idx = devices.indexOf(device)
                                 if (idx >= 0) listState.animateScrollToItem(idx + 2)
@@ -364,7 +373,7 @@ fun NetworkMap(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Icon(
-                                        Icons.Default.ArrowForwardIos,
+                                        Icons.AutoMirrored.Filled.ArrowForwardIos,
                                         contentDescription = null,
                                         tint = PrimaryBlue,
                                         modifier = Modifier.size(10.dp).padding(start = 2.dp)

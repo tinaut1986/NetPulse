@@ -5,12 +5,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -78,7 +78,6 @@ fun DiagnosticHistoryScreen(
         if (selectionMode) {
             SelectionActionBar(
                 selectedCount = selectedIds.size,
-                totalCount = entries.size,
                 allSelected = selectedIds.size == entries.size,
                 onSelectAll = {
                     if (selectedIds.size == entries.size) {
@@ -157,8 +156,8 @@ fun DiagnosticHistoryScreen(
             body = stringResource(R.string.delete_all_body),
             confirmLabel = stringResource(R.string.delete_all),
             confirmColor = SignalRed,
-            onConfirm = { onDeleteAll(); showDeleteAllDialog = false },
-            onDismiss = { showDeleteAllDialog = false }
+            onConfirm = { onDeleteAll(); },
+            onDismiss = { }
         )
     }
 
@@ -170,8 +169,8 @@ fun DiagnosticHistoryScreen(
             body = stringResource(R.string.export_all_body, entries.size),
             confirmLabel = stringResource(R.string.export_all),
             confirmColor = PrimaryBlue,
-            onConfirm = { onExportAll(); showExportAllDialog = false },
-            onDismiss = { showExportAllDialog = false }
+            onConfirm = { onExportAll(); },
+            onDismiss = { }
         )
     }
 
@@ -186,9 +185,8 @@ fun DiagnosticHistoryScreen(
             onConfirm = {
                 onDeleteMultiple(selectedIds.toList())
                 exitSelection()
-                showDeleteSelectionDialog = false
             },
-            onDismiss = { showDeleteSelectionDialog = false }
+            onDismiss = { }
         )
     }
 }
@@ -203,7 +201,7 @@ private fun NormalHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 4.dp, top = 16.dp, bottom = 8.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -212,26 +210,33 @@ private fun NormalHeader(
                 imageVector = Icons.Default.History,
                 contentDescription = null,
                 tint = PrimaryBlue,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(32.dp)
             )
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(12.dp))
             Text(
                 text = stringResource(R.string.history_title),
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
         if (hasEntries) {
             Row {
-                IconButton(onClick = onExportAll) {
+                IconButton(
+                    onClick = onExportAll,
+                    colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryBlue.copy(alpha = 0.1f))
+                ) {
                     Icon(
                         Icons.Default.IosShare,
                         contentDescription = stringResource(R.string.export_all),
                         tint = PrimaryBlue
                     )
                 }
-                IconButton(onClick = onDeleteAll) {
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = onDeleteAll,
+                    colors = IconButtonDefaults.iconButtonColors(containerColor = SignalRed.copy(alpha = 0.1f))
+                ) {
                     Icon(
                         Icons.Default.DeleteSweep,
                         contentDescription = stringResource(R.string.delete_all),
@@ -247,7 +252,6 @@ private fun NormalHeader(
 @Composable
 private fun SelectionActionBar(
     selectedCount: Int,
-    totalCount: Int,
     allSelected: Boolean,
     onSelectAll: () -> Unit,
     onDelete: () -> Unit,
@@ -434,7 +438,7 @@ fun HistoryEntryCard(
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.open_entry)) },
-                            leadingIcon = { Icon(Icons.Default.OpenInNew, contentDescription = null) },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
                             onClick = { showMenu = false; onClick() }
                         )
                         DropdownMenuItem(
@@ -461,8 +465,8 @@ fun HistoryEntryCard(
             body = stringResource(R.string.delete_entry_body, entry.label),
             confirmLabel = stringResource(R.string.delete_entry),
             confirmColor = SignalRed,
-            onConfirm = { onDelete(); showDeleteDialog = false },
-            onDismiss = { showDeleteDialog = false }
+            onConfirm = { onDelete(); },
+            onDismiss = { }
         )
     }
 }
@@ -515,13 +519,16 @@ fun DiagnosticDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back), tint = MaterialTheme.colorScheme.onBackground)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = MaterialTheme.colorScheme.onBackground)
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(entry.ssid, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(entry.label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), fontSize = 12.sp)
             }
-            IconButton(onClick = onExport) {
+            IconButton(
+                onClick = onExport,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryBlue.copy(alpha = 0.1f))
+            ) {
                 Icon(Icons.Default.Share, contentDescription = stringResource(R.string.export_entry), tint = PrimaryBlue)
             }
         }

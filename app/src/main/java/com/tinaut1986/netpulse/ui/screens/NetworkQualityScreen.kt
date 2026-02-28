@@ -50,11 +50,11 @@ fun NetworkQualityScreen(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header
+        // Unified Screen Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -73,7 +73,10 @@ fun NetworkQualityScreen(
                     fontWeight = FontWeight.Bold
                 )
             }
-            IconButton(onClick = onHistoryClick) {
+            IconButton(
+                onClick = onHistoryClick,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryBlue.copy(alpha = 0.1f))
+            ) {
                 Icon(
                     imageVector = Icons.Default.History,
                     contentDescription = stringResource(R.string.history_title),

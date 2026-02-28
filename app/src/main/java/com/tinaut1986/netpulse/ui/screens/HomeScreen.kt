@@ -3,22 +3,14 @@ package com.tinaut1986.netpulse.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.SignalWifi4Bar
-import androidx.compose.material.icons.filled.SignalCellular4Bar
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,16 +29,16 @@ fun HomeScreen(wifiInfo: WifiInfo, signalHistory: List<Int>, publicIp: String) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        // Unified Screen Header
         Row(
             modifier = Modifier.padding(bottom = 24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.res.painterResource(R.drawable.ic_logo),
+            Icon(
+                imageVector = Icons.Default.Home,
                 contentDescription = null,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
+                tint = PrimaryBlue,
+                modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(

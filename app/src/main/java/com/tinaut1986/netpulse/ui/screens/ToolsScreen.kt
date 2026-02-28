@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -69,6 +70,26 @@ fun ToolsScreen(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        // Screen Title
+        Row(
+            modifier = Modifier.padding(bottom = 24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Build,
+                contentDescription = null,
+                tint = PrimaryBlue,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.tools),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
         // Public IP Info
         PremiumCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -208,7 +229,7 @@ fun DnsPortSection(
             ) {
                 if (isFullScanMode || isPortScanning) {
                     Icon(
-                        if (isPortScanning) Icons.Default.Stop else Icons.Default.ManageSearch,
+                        if (isPortScanning) Icons.Default.Stop else Icons.AutoMirrored.Filled.ManageSearch,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
