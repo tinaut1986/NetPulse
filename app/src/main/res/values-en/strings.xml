@@ -52,6 +52,22 @@
     <string name="selected">Selected</string>
     <string name="unknown_device">Unknown Device</string>
     <string name="speed_test">Speed Test</string>
+    <!-- Speed Test -->
+    <string name="download">Download</string>
+    <string name="upload">Upload</string>
+    <string name="testing_download">Analyzing download (Average of 3 passes)…</string>
+    <string name="testing_upload">Analyzing upload (Average of 2 passes)…</string>
+    <string name="test_finished">Test completed successfully</string>
+    <string name="test_start_desc">Tap the button to start the full test</string>
+    <string name="start_test">Start Full Test</string>
+    <string name="repeat_test">Repeat Test</string>
+    <string name="testing_phase_download">Testing Download…</string>
+    <string name="testing_phase_upload">Testing Upload…</string>
+    <string name="mbps_label">Mbps</string>
+    <string name="download_mbps">Download (Mbps)</string>
+    <string name="upload_mbps">Upload (Mbps)</string>
+    <string name="status_downloading">DOWNLOADING</string>
+    <string name="status_uploading">UPLOADING</string>
     <!-- Device Detail Dialog -->
     <string name="device_details">Device Details</string>
     <string name="general_info">General Information</string>

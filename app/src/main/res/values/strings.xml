@@ -52,6 +52,22 @@
     <string name="selected">Seleccionado</string>
     <string name="unknown_device">Dispositivo desconocido</string>
     <string name="speed_test">Test de Velocidad</string>
+    <!-- Speed Test -->
+    <string name="download">Descarga</string>
+    <string name="upload">Subida</string>
+    <string name="testing_download">Analizando bajada (Media de 3 pasadas)...</string>
+    <string name="testing_upload">Analizando subida (Media de 2 pasadas)...</string>
+    <string name="test_finished">Test completado con éxito</string>
+    <string name="test_start_desc">Pulsa el botón para iniciar el test completo</string>
+    <string name="start_test">Iniciar Test Completo</string>
+    <string name="repeat_test">Repetir Test</string>
+    <string name="testing_phase_download">Probando Bajada...</string>
+    <string name="testing_phase_upload">Probando Subida...</string>
+    <string name="mbps_label">Mbps</string>
+    <string name="download_mbps">Bajada (Mbps)</string>
+    <string name="upload_mbps">Subida (Mbps)</string>
+    <string name="status_downloading">BAJANDO</string>
+    <string name="status_uploading">SUBIENDO</string>
     <!-- Device Detail Dialog -->
     <string name="device_details">Detalles del Dispositivo</string>
     <string name="general_info">Información General</string>

@@ -99,13 +99,13 @@ fun SpeedTestScreen(
                         color = barColor
                     )
                     Text(
-                        text = if (phase == "upload") "Subida (Mbps)" else "Bajada (Mbps)",
+                        text = if (phase == "upload") stringResource(R.string.upload_mbps) else stringResource(R.string.download_mbps),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else if (isTesting) {
                     Text(
-                        text = if (phase == "upload") "SUBIENDO" else "BAJANDO",
+                        text = if (phase == "upload") stringResource(R.string.status_uploading) else stringResource(R.string.status_downloading),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = barColor
@@ -134,7 +134,7 @@ fun SpeedTestScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             ResultItem(
-                label = "Descarga",
+                label = stringResource(R.string.download),
                 value = downloadSpeed,
                 icon = Icons.Default.ArrowDownward,
                 color = MaterialTheme.colorScheme.primary,
@@ -142,7 +142,7 @@ fun SpeedTestScreen(
                 modifier = Modifier.weight(1f)
             )
             ResultItem(
-                label = "Subida",
+                label = stringResource(R.string.upload),
                 value = uploadSpeed,
                 icon = Icons.Default.ArrowUpward,
                 color = Color(0xFF4CAF50),
@@ -164,10 +164,10 @@ fun SpeedTestScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val statusText = when(phase) {
-                    "download" -> "Analizando bajada (Media de 3 pasadas)..."
-                    "upload" -> "Analizando subida (Media de 2 pasadas)..."
-                    "finished" -> "Test completado con éxito"
-                    else -> "Pulsa el botón para iniciar el test completo"
+                    "download" -> stringResource(R.string.testing_download)
+                    "upload" -> stringResource(R.string.testing_upload)
+                    "finished" -> stringResource(R.string.test_finished)
+                    else -> stringResource(R.string.test_start_desc)
                 }
                 Text(
                     text = statusText,
@@ -194,10 +194,10 @@ fun SpeedTestScreen(
                     strokeWidth = 2.dp
                 )
                 Spacer(Modifier.width(12.dp))
-                Text(if (phase == "upload") "Probando Subida..." else "Probando Bajada...")
+                Text(if (phase == "upload") stringResource(R.string.testing_phase_upload) else stringResource(R.string.testing_phase_download))
             } else {
                 Text(
-                    text = if (phase == "finished") "Repetir Test" else "Iniciar Test Completo",
+                    text = if (phase == "finished") stringResource(R.string.repeat_test) else stringResource(R.string.start_test),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -237,7 +237,7 @@ fun ResultItem(
                 fontWeight = FontWeight.Bold,
                 color = if (active) color else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text("Mbps", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+            Text(stringResource(R.string.mbps_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
         }
     }
 }

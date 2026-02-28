@@ -106,96 +106,102 @@ class MainActivity : ComponentActivity() {
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
-                                NavigationDrawerItem(
-                                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.dashboard)) },
-                                    selected = currentRoute == "home",
-                                    onClick = {
-                                        navController.navigate("home")
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                    colors = NavigationDrawerItemDefaults.colors(
-                                        unselectedContainerColor = Color.Transparent,
-                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                        selectedIconColor = PrimaryBlue,
-                                        selectedTextColor = PrimaryBlue,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                
+                                Column(modifier = Modifier.weight(1f)) {
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                                        label = { Text(stringResource(R.string.dashboard)) },
+                                        selected = currentRoute == "home",
+                                        onClick = {
+                                            navController.navigate("home")
+                                            scope.launch { drawerState.close() }
+                                        },
+                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            unselectedContainerColor = Color.Transparent,
+                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+                                            selectedIconColor = PrimaryBlue,
+                                            selectedTextColor = PrimaryBlue,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
                                     )
-                                )
-                                NavigationDrawerItem(
-                                    icon = { Icon(Icons.Default.Devices, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.network_map)) },
-                                    selected = currentRoute == "devices",
-                                    onClick = {
-                                        navController.navigate("devices")
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                    colors = NavigationDrawerItemDefaults.colors(
-                                        unselectedContainerColor = Color.Transparent,
-                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                        selectedIconColor = PrimaryBlue,
-                                        selectedTextColor = PrimaryBlue,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Devices, contentDescription = null) },
+                                        label = { Text(stringResource(R.string.network_map)) },
+                                        selected = currentRoute == "devices",
+                                        onClick = {
+                                            navController.navigate("devices")
+                                            scope.launch { drawerState.close() }
+                                        },
+                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            unselectedContainerColor = Color.Transparent,
+                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+                                            selectedIconColor = PrimaryBlue,
+                                            selectedTextColor = PrimaryBlue,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
                                     )
-                                )
-                                NavigationDrawerItem(
-                                    icon = { Icon(Icons.Default.Build, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.tools)) },
-                                    selected = currentRoute == "tools",
-                                    onClick = {
-                                        navController.navigate("tools")
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                    colors = NavigationDrawerItemDefaults.colors(
-                                        unselectedContainerColor = Color.Transparent,
-                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                        selectedIconColor = PrimaryBlue,
-                                        selectedTextColor = PrimaryBlue,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Build, contentDescription = null) },
+                                        label = { Text(stringResource(R.string.tools)) },
+                                        selected = currentRoute == "tools",
+                                        onClick = {
+                                            navController.navigate("tools")
+                                            scope.launch { drawerState.close() }
+                                        },
+                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            unselectedContainerColor = Color.Transparent,
+                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+                                            selectedIconColor = PrimaryBlue,
+                                            selectedTextColor = PrimaryBlue,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
                                     )
-                                )
-                                NavigationDrawerItem(
-                                    icon = { Icon(Icons.Default.Speed, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.speed_test)) },
-                                    selected = currentRoute == "speed_test",
-                                    onClick = {
-                                        navController.navigate("speed_test")
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                    colors = NavigationDrawerItemDefaults.colors(
-                                        unselectedContainerColor = Color.Transparent,
-                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                        selectedIconColor = PrimaryBlue,
-                                        selectedTextColor = PrimaryBlue,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Speed, contentDescription = null) },
+                                        label = { Text(stringResource(R.string.speed_test)) },
+                                        selected = currentRoute == "speed_test",
+                                        onClick = {
+                                            navController.navigate("speed_test")
+                                            scope.launch { drawerState.close() }
+                                        },
+                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            unselectedContainerColor = Color.Transparent,
+                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+                                            selectedIconColor = PrimaryBlue,
+                                            selectedTextColor = PrimaryBlue,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
                                     )
-                                )
-                                NavigationDrawerItem(
-                                    icon = { Icon(Icons.Default.NetworkCheck, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.network_quality)) },
-                                    selected = currentRoute == "network_quality",
-                                    onClick = {
-                                        navController.navigate("network_quality")
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                    colors = NavigationDrawerItemDefaults.colors(
-                                        unselectedContainerColor = Color.Transparent,
-                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                        selectedIconColor = PrimaryBlue,
-                                        selectedTextColor = PrimaryBlue,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.NetworkCheck, contentDescription = null) },
+                                        label = { Text(stringResource(R.string.network_quality)) },
+                                        selected = currentRoute == "network_quality",
+                                        onClick = {
+                                            navController.navigate("network_quality")
+                                            scope.launch { drawerState.close() }
+                                        },
+                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            unselectedContainerColor = Color.Transparent,
+                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+                                            selectedIconColor = PrimaryBlue,
+                                            selectedTextColor = PrimaryBlue,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
                                     )
-                                )
+                                }
+
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                                
                                 NavigationDrawerItem(
                                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                                     label = { Text(stringResource(R.string.settings)) },
@@ -214,6 +220,7 @@ class MainActivity : ComponentActivity() {
                                         unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
                                 )
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
                     ) {
