@@ -111,7 +111,7 @@ fun SettingsScreen(
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,

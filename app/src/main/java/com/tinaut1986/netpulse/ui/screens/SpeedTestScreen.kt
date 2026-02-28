@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tinaut1986.netpulse.R
 import com.tinaut1986.netpulse.ui.theme.PrimaryBlue
+import java.util.Locale
 
 @Composable
 fun SpeedTestScreen(
@@ -93,7 +94,7 @@ fun SpeedTestScreen(
                 val currentDisplaySpeed = if (phase == "upload") uploadSpeed else downloadSpeed
                 if (currentDisplaySpeed != null && isTesting) {
                     Text(
-                        text = String.format("%.1f", currentDisplaySpeed),
+                        text = String.format(Locale.getDefault(), "%.1f", currentDisplaySpeed),
                         style = MaterialTheme.typography.displayLarge,
                         fontWeight = FontWeight.Black,
                         color = barColor
@@ -111,7 +112,7 @@ fun SpeedTestScreen(
                         color = barColor
                     )
                     Text(
-                        text = String.format("%.0f%%", progress * 100),
+                        text = String.format(Locale.getDefault(), "%.0f%%", progress * 100),
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -232,7 +233,7 @@ fun ResultItem(
             Spacer(modifier = Modifier.height(4.dp))
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
-                text = if (value != null) String.format("%.1f", value) else "--",
+                text = if (value != null) String.format(Locale.getDefault(), "%.1f", value) else "--",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = if (active) color else MaterialTheme.colorScheme.onSurfaceVariant
