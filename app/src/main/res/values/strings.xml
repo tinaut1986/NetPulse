@@ -68,6 +68,11 @@
     <string name="upload_mbps">Subida (Mbps)</string>
     <string name="status_downloading">BAJANDO</string>
     <string name="status_uploading">SUBIENDO</string>
+    <string name="latency_ms">Latencia (Ping)</string>
+    <string name="jitter_ms">Jitter</string>
+    <string name="testing_latency">Midiendo latencia…</string>
+    <string name="status_latency">LATENCIA</string>
+    <string name="ms_unit">ms</string>
     <!-- Device Detail Dialog -->
     <string name="device_details">Detalles del Dispositivo</string>
     <string name="general_info">Información General</string>
@@ -160,4 +165,26 @@
     <string name="export_all_body">Se exportarán los %1$d diagnósticos en un único fichero de texto.</string>
     <string name="delete_selection_title">Eliminar seleccionados</string>
     <string name="delete_selection_body">Se eliminarán %1$d diagnóstico(s). Esta acción no se puede deshacer.</string>
+    <!-- Drawer Categories -->
+    <string name="nav_main">Principal</string>
+    <string name="nav_network_tools">Auditoría de Red</string>
+    <string name="nav_utilities">Utilidades</string>
+    <!-- New Tools -->
+    <string name="wol_tool">WOL</string>
+    <string name="subnet_calc_tool">Subnet</string>
+    <string name="wifi_explorer_tool">WiFi</string>
+    <string name="whois_tool">WHOIS</string>
+    <string name="wol_title">Wake-on-LAN</string>
+    <string name="wifi_explorer_title">Explorador WiFi</string>
+    <string name="mac_label">Dirección MAC</string>
+    <string name="send_wol">Enviar Magic Packet</string>
+    <string name="subnet_calc_title">Calculadora de Subred</string>
+    <string name="network_address">Red</string>
+    <string name="first_host">Primer Host</string>
+    <string name="last_host">Último Host</string>
+    <string name="broadcast_address">Broadcast</string>
+    <string name="total_hosts">Hosts Totales</string>
+    <string name="calculate">Calcular</string>
+    <string name="whois_title">Búsqueda WHOIS</string>
+    <string name="whois_lookup_btn">Buscar en WHOIS</string>
 </resources>

@@ -11,6 +11,7 @@ import android.text.format.Formatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import android.net.wifi.ScanResult
 
 class WifiScanner(private val context: Context) {
     private val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -109,5 +110,25 @@ class WifiScanner(private val context: Context) {
             packetLoss = packetLoss,
             avgLatency = avgLatency
         )
+    }
+
+    /**
+     * Retrieves nearby WiFi access points.
+     */
+    fun getNearbyWifi(): List<NearbyWifi> {
+        return try {
+            wifiManager.scanResults.map { result ->
+                NearbyWifi(
+                    ssid = if (result.SSID.isNullOrEmpty()) "Hidden Network" else result.SSID,
+                    bssid = result.BSSID ?: "Unknown",
+                    rssi = result.level,
+                    frequency = result.frequency,
+                    capabilities = result.capabilities ?: "",
+                    level = WifiManager.calculateSignalLevel(result.level, 5)
+                )
+            }.sortedByDescending { it.rssi }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 }

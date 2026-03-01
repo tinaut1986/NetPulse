@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tinaut1986.netpulse.R
 import com.tinaut1986.netpulse.ui.theme.PrimaryBlue
+import com.tinaut1986.netpulse.ui.theme.PrimaryPurple
 import java.util.Locale
 
 @Composable
@@ -30,6 +33,8 @@ fun SpeedTestScreen(
     progress: Float,
     downloadSpeed: Double?,
     uploadSpeed: Double?,
+    latency: Double?,
+    jitter: Double?,
     phase: String,
     onStartTest: () -> Unit
 ) {
@@ -80,7 +85,11 @@ fun SpeedTestScreen(
                 strokeCap = StrokeCap.Round,
             )
             
-            val barColor = if (phase == "upload") Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary
+            val barColor = when(phase) {
+                "latency" -> PrimaryPurple
+                "upload" -> Color(0xFF4CAF50)
+                else -> MaterialTheme.colorScheme.primary
+            }
             
             CircularProgressIndicator(
                 progress = { animatedProgress },
@@ -91,22 +100,30 @@ fun SpeedTestScreen(
             )
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val currentDisplaySpeed = if (phase == "upload") uploadSpeed else downloadSpeed
-                if (currentDisplaySpeed != null && isTesting) {
+                val currentDisplayValue = when(phase) {
+                    "latency" -> latency
+                    "upload" -> uploadSpeed
+                    else -> downloadSpeed
+                }
+                if (currentDisplayValue != null && isTesting) {
                     Text(
-                        text = String.format(Locale.getDefault(), "%.1f", currentDisplaySpeed),
+                        text = String.format(Locale.getDefault(), "%.1f", currentDisplayValue),
                         style = MaterialTheme.typography.displayLarge,
                         fontWeight = FontWeight.Black,
                         color = barColor
                     )
                     Text(
-                        text = if (phase == "upload") stringResource(R.string.upload_mbps) else stringResource(R.string.download_mbps),
+                        text = if (phase == "latency") stringResource(R.string.ms_unit) else stringResource(R.string.mbps_label),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else if (isTesting) {
                     Text(
-                        text = if (phase == "upload") stringResource(R.string.status_uploading) else stringResource(R.string.status_downloading),
+                        text = when(phase) {
+                            "latency" -> stringResource(R.string.status_latency)
+                            "upload" -> stringResource(R.string.status_uploading)
+                            else -> stringResource(R.string.status_downloading)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = barColor
@@ -137,6 +154,7 @@ fun SpeedTestScreen(
             ResultItem(
                 label = stringResource(R.string.download),
                 value = downloadSpeed,
+                unit = stringResource(R.string.mbps_label),
                 icon = Icons.Default.ArrowDownward,
                 color = MaterialTheme.colorScheme.primary,
                 active = phase == "download" || phase == "finished",
@@ -145,9 +163,36 @@ fun SpeedTestScreen(
             ResultItem(
                 label = stringResource(R.string.upload),
                 value = uploadSpeed,
+                unit = stringResource(R.string.mbps_label),
                 icon = Icons.Default.ArrowUpward,
                 color = Color(0xFF4CAF50),
                 active = phase == "upload" || phase == "finished",
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            ResultItem(
+                label = stringResource(R.string.latency_ms),
+                value = latency,
+                unit = stringResource(R.string.ms_unit),
+                icon = Icons.Default.Timer,
+                color = PrimaryPurple,
+                active = phase == "latency" || phase == "finished",
+                modifier = Modifier.weight(1f)
+            )
+            ResultItem(
+                label = stringResource(R.string.jitter_ms),
+                value = jitter,
+                unit = stringResource(R.string.ms_unit),
+                icon = Icons.AutoMirrored.Filled.CompareArrows,
+                color = Color(0xFFFFA000),
+                active = phase == "latency" || phase == "finished",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -165,6 +210,7 @@ fun SpeedTestScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val statusText = when(phase) {
+                    "latency" -> stringResource(R.string.testing_latency)
                     "download" -> stringResource(R.string.testing_download)
                     "upload" -> stringResource(R.string.testing_upload)
                     "finished" -> stringResource(R.string.test_finished)
@@ -195,7 +241,13 @@ fun SpeedTestScreen(
                     strokeWidth = 2.dp
                 )
                 Spacer(Modifier.width(12.dp))
-                Text(if (phase == "upload") stringResource(R.string.testing_phase_upload) else stringResource(R.string.testing_phase_download))
+                Text(
+                    text = when(phase) {
+                        "latency" -> stringResource(R.string.testing_latency)
+                        "upload" -> stringResource(R.string.testing_phase_upload)
+                        else -> stringResource(R.string.testing_phase_download)
+                    }
+                )
             } else {
                 Text(
                     text = if (phase == "finished") stringResource(R.string.repeat_test) else stringResource(R.string.start_test),
@@ -213,6 +265,7 @@ fun SpeedTestScreen(
 fun ResultItem(
     label: String,
     value: Double?,
+    unit: String,
     icon: ImageVector,
     color: Color,
     active: Boolean,
@@ -238,7 +291,7 @@ fun ResultItem(
                 fontWeight = FontWeight.Bold,
                 color = if (active) color else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(stringResource(R.string.mbps_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+            Text(unit, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
         }
     }
 }

@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import com.tinaut1986.netpulse.data.NetworkUtils
+import com.tinaut1986.netpulse.data.SubnetInfo
 
 class NetPulseViewModel(application: Application) : AndroidViewModel(application) {
     private val wifiScanner = WifiScanner(application)
@@ -19,6 +21,7 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
     private val speedTestTool = SpeedTestTool()
     private val diagnosticTool = NetworkDiagnosticTool()
     private val historyManager = DiagnosticHistoryManager(application)
+    private val settingsManager = SettingsManager(application)
 
     val wifiInfo = wifiScanner.wifiState
     val signalHistory = mutableStateListOf<Int>()
@@ -57,6 +60,9 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
     private val _scanProgress = MutableStateFlow(0f)
     val scanProgress: StateFlow<Float> = _scanProgress.asStateFlow()
     
+    private val _nearbyWifi = MutableStateFlow<List<NearbyWifi>>(emptyList())
+    val nearbyWifi: StateFlow<List<NearbyWifi>> = _nearbyWifi.asStateFlow()
+
     private val _pingResult = MutableStateFlow<String?>(null)
     val pingResult: StateFlow<String?> = _pingResult
 
@@ -92,15 +98,48 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
     private val _uploadSpeed = MutableStateFlow<Double?>(null)
     val uploadSpeed: StateFlow<Double?> = _uploadSpeed
 
-    private val _speedTestPhase = MutableStateFlow("") // "download", "upload", ""
+    private val _speedTestPhase = MutableStateFlow("") // "latency", "download", "upload", ""
     val speedTestPhase: StateFlow<String> = _speedTestPhase
 
+    private val _speedTestLatency = MutableStateFlow<Double?>(null)
+    val speedTestLatency: StateFlow<Double?> = _speedTestLatency
+
+    private val _speedTestJitter = MutableStateFlow<Double?>(null)
+    val speedTestJitter: StateFlow<Double?> = _speedTestJitter
+
     private var pingJob: kotlinx.coroutines.Job? = null
+
+    private val _subnetInfo = MutableStateFlow<SubnetInfo?>(null)
+    val subnetInfo: StateFlow<SubnetInfo?> = _subnetInfo
+
+    private val _toolHost = MutableStateFlow("google.com")
+    val toolHost: StateFlow<String> = _toolHost
+
+    private val _toolPort = MutableStateFlow("")
+    val toolPort: StateFlow<String> = _toolPort
+
+    // Specific tool results
+    private val _dnsResult = MutableStateFlow<String?>(null)
+    val dnsResult: StateFlow<String?> = _dnsResult
+
+    private val _portResult = MutableStateFlow<String?>(null)
+    val portResult: StateFlow<String?> = _portResult
+
+    private val _traceResult = MutableStateFlow<String?>(null)
+    val traceResult: StateFlow<String?> = _traceResult
+
+    private val _whoisResult = MutableStateFlow<String?>(null)
+    val whoisResult: StateFlow<String?> = _whoisResult
+
+    private val _wolResult = MutableStateFlow<String?>(null)
+    val wolResult: StateFlow<String?> = _wolResult
 
     init {
         startSignalMonitoring()
         fetchPublicIp()
         observeNetworkChanges()
+        // Load last used host
+        _toolHost.value = settingsManager.getLastHost()
     }
 
     private fun observeNetworkChanges() {
@@ -203,9 +242,9 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
 
     fun runPortCheck(host: String, port: Int) {
         viewModelScope.launch {
-            _toolResult.value = "Checking $host:$port..."
+            _portResult.value = "Checking $host:$port..."
             val open = pingTool.checkPort(host, port)
-            _toolResult.value = if (open) "Port $port is OPEN on $host" else "Port $port is CLOSED on $host"
+            _portResult.value = if (open) "Port $port is OPEN on $host" else "Port $port is CLOSED on $host"
         }
     }
 
@@ -215,7 +254,7 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
             _isPortScanning.value = true
             _portScanProgress.value = 0f
             _portScanResults.value = emptyList()
-            _toolResult.value = "Scanning all ports on $host..."
+            _portResult.value = "Scanning all ports on $host..."
 
             val open = pingTool.scanAllPorts(host) { progress, found ->
                 _portScanProgress.value = progress
@@ -223,7 +262,7 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
             }
 
             _portScanResults.value = open
-            _toolResult.value = if (open.isEmpty()) {
+            _portResult.value = if (open.isEmpty()) {
                 "No open ports found on $host"
             } else {
                 "Found ${open.size} open port(s) on $host:\n" + open.joinToString(", ")
@@ -239,9 +278,9 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
 
     fun runDnsLookup(host: String) {
         viewModelScope.launch {
-            _toolResult.value = "Resolving $host..."
+            _dnsResult.value = "Resolving $host..."
             val ips = pingTool.dnsLookup(host)
-            _toolResult.value = if (ips.isNotEmpty()) "Resolved IPs:\n" + ips.joinToString("\n") else "Could not resolve $host"
+            _dnsResult.value = if (ips.isNotEmpty()) "Resolved IPs:\n" + ips.joinToString("\n") else "Could not resolve $host"
         }
     }
 
@@ -250,13 +289,46 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
         pingJob = viewModelScope.launch {
             _isPinging.value = true
             val results = mutableListOf<String>()
-            _toolResult.value = "Traceroute to $host..."
+            _traceResult.value = "Traceroute to $host..."
             pingTool.traceroute(host) { hop, ip, time ->
                 results.add("$hop: $ip (${time}ms)")
-                _toolResult.value = results.joinToString("\n")
+                _traceResult.value = results.joinToString("\n")
             }
             _isPinging.value = false
         }
+    }
+
+    fun wakeOnLan(mac: String) {
+        viewModelScope.launch {
+            _wolResult.value = "Sending Magic Packet to $mac..."
+            val result = NetworkUtils.sendWakeOnLan(mac)
+            _wolResult.value = if (result.isSuccess) "Magic Packet sent successfully to $mac" else "Failed to send Magic Packet: ${result.exceptionOrNull()?.message}"
+        }
+    }
+
+    fun calculateSubnet(ip: String, mask: String) {
+        _subnetInfo.value = NetworkUtils.calculateSubnet(ip, mask)
+    }
+
+    fun runWhois(target: String) {
+        viewModelScope.launch {
+            _whoisResult.value = "WHOIS lookup for $target..."
+            val result = NetworkUtils.whoisLookup(target)
+            _whoisResult.value = result
+        }
+    }
+
+    fun scanNearbyWifi() {
+        _nearbyWifi.value = wifiScanner.getNearbyWifi()
+    }
+
+    fun updateToolHost(host: String) {
+        _toolHost.value = host
+        settingsManager.setLastHost(host)
+    }
+
+    fun updateToolPort(port: String) {
+        _toolPort.value = port
     }
 
     fun runSpeedTest() {
@@ -266,9 +338,20 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
             _speedTestProgress.value = 0f
             _downloadSpeed.value = null
             _uploadSpeed.value = null
+            _speedTestLatency.value = null
+            _speedTestJitter.value = null
             
+            // Phase 0: Latency
+            _speedTestPhase.value = "latency"
+            val (latency, jitter) = speedTestTool.runLatencyTest { progress ->
+                _speedTestProgress.value = progress
+            }
+            _speedTestLatency.value = if (latency >= 0) latency else 0.0
+            _speedTestJitter.value = if (jitter >= 0) jitter else 0.0
+
             // Phase 1: Download
             _speedTestPhase.value = "download"
+            _speedTestProgress.value = 0f
             val dSpeed = speedTestTool.runDownloadTest { progress ->
                 _speedTestProgress.value = progress
             }

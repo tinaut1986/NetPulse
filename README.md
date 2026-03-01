@@ -11,17 +11,14 @@
 - **📊 Network Dashboard:** Real-time monitoring of Wi-Fi signal strength, latency, and packet loss with dynamic live graphing.
 - **🗺️ Interactive Device Mapping:** A visual representation of your subnet showing connected nodes. Tap any node to see deep technical details.
 - **🔍 Advanced Device Discovery:** Goes beyond IP addresses. Identifies device types (Smartphone, Router, PC, IoT), manufacturers, MAC addresses, and hostnames.
-- **🔍 Network Quality Diagnosis:** Comprehensive testing of jitter, latency, and DNS health with advanced scoring and history tracking.
-- **📤 Smart Report Export:** Export single or multiple diagnostic results to formatted text files for external analysis.
-- **🛡️ Comprehensive Port Scanner:**
-  - **Single Port Check:** Quickly verify common services.
-  - **Full Port Scan (1-65535):** Scan the entire range in parallel batches for extreme speed, with real-time service discovery.
+- **🔍 Network Quality Diagnosis:** Comprehensive testing of jitter and latency using native ICMP for high accuracy, with scoring and history tracking.
+- **📤 Smart Report Export:** Export diagnostic results to formatted text files.
 - **🛠️ Professional Network Tools:**
-  - **Ping:** Measure round-trip time with a terminal-style output.
-  - **DNS Lookup:** Resolve hostnames and view detailed record information.
-  - **Traceroute:** Trace the path to any host to identify network bottlenecks.
-- **🚀 Speed Test:** Test your download and upload speeds with a premium, animated interface.
-- **🌗 Theme Support:** Full support for Light and Dark modes with a sleek, minimalist design.
+  - **Ping & Traceroute:** Measure round-trip time and path with professional, independent terminal sessions.
+  - **WHOIS Lookup:** Resolve domain registration details with smart subdomain detection.
+  - **DNS & Port Scanner:** Parallel scanning of all 65535 ports with service identification.
+- **🚀 Enhanced Speed Test:** Animated interface for Download, Upload, and specialized Latency/Jitter testing.
+- **🌗 Theme Support:** Full support for Light and Dark modes.
 - **🌐 Multilingual:** Available in English and Spanish.
 
 ## 🛠️ Technical Stack

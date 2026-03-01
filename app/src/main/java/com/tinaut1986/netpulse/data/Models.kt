@@ -37,3 +37,12 @@ data class DeviceInfo(
     val deviceType: DeviceType = DeviceType.UNKNOWN,
     val openPorts: List<Int> = emptyList()
 )
+
+data class NearbyWifi(
+    val ssid: String,
+    val bssid: String,
+    val rssi: Int,
+    val frequency: Int,
+    val capabilities: String,
+    val level: Int // 0-4
+)

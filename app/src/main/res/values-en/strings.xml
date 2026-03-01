@@ -68,6 +68,11 @@
     <string name="upload_mbps">Upload (Mbps)</string>
     <string name="status_downloading">DOWNLOADING</string>
     <string name="status_uploading">UPLOADING</string>
+    <string name="latency_ms">Latency (Ping)</string>
+    <string name="jitter_ms">Jitter</string>
+    <string name="testing_latency">Measuring latency…</string>
+    <string name="status_latency">LATENCY</string>
+    <string name="ms_unit">ms</string>
     <!-- Device Detail Dialog -->
     <string name="device_details">Device Details</string>
     <string name="general_info">General Information</string>
@@ -160,4 +165,26 @@
     <string name="export_all_body">All %1$d diagnostics will be exported into a single text file.</string>
     <string name="delete_selection_title">Delete selected</string>
     <string name="delete_selection_body">%1$d diagnostic(s) will be deleted. This action cannot be undone.</string>
+    <!-- Drawer Categories -->
+    <string name="nav_main">Main</string>
+    <string name="nav_network_tools">Network Audit</string>
+    <string name="nav_utilities">Utilities</string>
+    <!-- New Tools -->
+    <string name="wol_tool">WOL</string>
+    <string name="subnet_calc_tool">Subnet</string>
+    <string name="wifi_explorer_tool">WiFi</string>
+    <string name="whois_tool">WHOIS</string>
+    <string name="wol_title">Wake-on-LAN</string>
+    <string name="wifi_explorer_title">WiFi Explorer</string>
+    <string name="mac_label">MAC Address</string>
+    <string name="send_wol">Send Magic Packet</string>
+    <string name="subnet_calc_title">Subnet Calculator</string>
+    <string name="network_address">Network</string>
+    <string name="first_host">First Host</string>
+    <string name="last_host">Last Host</string>
+    <string name="broadcast_address">Broadcast</string>
+    <string name="total_hosts">Total Hosts</string>
+    <string name="calculate">Calculate</string>
+    <string name="whois_title">WHOIS Lookup</string>
+    <string name="whois_lookup_btn">WHOIS Lookup</string>
 </resources>

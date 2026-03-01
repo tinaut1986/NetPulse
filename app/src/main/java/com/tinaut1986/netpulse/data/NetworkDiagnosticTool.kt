@@ -42,20 +42,34 @@ data class DiagnosticReport(
 class NetworkDiagnosticTool {
 
     /**
-     * Ping a single host [count] times and return ordered samples.
+     * Ping a single host [count] times using the native ping command for accuracy.
      */
     suspend fun pingMultiple(host: String, count: Int, timeoutMs: Int = 2000): List<PingSample> =
         withContext(Dispatchers.IO) {
             val samples = mutableListOf<PingSample>()
+            val timeoutSec = (timeoutMs / 1000).coerceAtLeast(1)
+            
             repeat(count) {
                 val start = System.currentTimeMillis()
-                val latency = try {
-                    val address = InetAddress.getByName(host)
-                    if (address.isReachable(timeoutMs)) {
-                        System.currentTimeMillis() - start
-                    } else -1L
-                } catch (e: Exception) { -1L }
+                var latency = -1L
+                try {
+                    // Using native ping command is much more reliable than InetAddress.isReachable
+                    val process = Runtime.getRuntime().exec("ping -c 1 -W $timeoutSec $host")
+                    val output = process.inputStream.bufferedReader().use { it.readText() }
+                    
+                    if (output.contains("bytes from", ignoreCase = true)) {
+                        // Extract time=XX.X ms
+                        val timeMatch = "time=([0-9.]+)".toRegex().find(output)
+                        latency = timeMatch?.groupValues?.get(1)?.toDouble()?.toLong() ?: (System.currentTimeMillis() - start)
+                    }
+                } catch (e: Exception) {
+                    latency = -1L
+                }
+                
                 samples.add(PingSample(System.currentTimeMillis(), latency))
+                if (it < count - 1) {
+                    kotlinx.coroutines.delay(100) // Small delay between pings
+                }
             }
             samples
         }
@@ -72,9 +86,14 @@ class NetworkDiagnosticTool {
         val min = successful.minOrNull() ?: -1L
         val max = successful.maxOrNull() ?: -1L
 
-        // Jitter = mean absolute deviation from average
-        val jitter = if (successful.size >= 2 && avg >= 0) {
-            successful.map { Math.abs(it - avg) }.average().toLong()
+        // Jitter = RTD (Round Trip Delay) variation between consecutive samples
+        // This is the standard "Simplified Jitter" formula used in networking
+        val jitter = if (successful.size >= 2) {
+            var diffSum = 0L
+            for (i in 0 until successful.size - 1) {
+                diffSum += Math.abs(successful[i+1] - successful[i])
+            }
+            diffSum / (successful.size - 1)
         } else 0L
 
         return TargetDiagnostic(target, samples, avg, min, max, jitter, loss)

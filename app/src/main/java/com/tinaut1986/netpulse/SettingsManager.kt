@@ -24,4 +24,12 @@ class SettingsManager(private val context: Context) {
         _language.value = language
         prefs.edit().putString("language", language).apply()
     }
+
+    fun setLastHost(host: String) {
+        prefs.edit().putString("last_host", host).apply()
+    }
+
+    fun getLastHost(): String {
+        return prefs.getString("last_host", "google.com") ?: "google.com"
+    }
 }

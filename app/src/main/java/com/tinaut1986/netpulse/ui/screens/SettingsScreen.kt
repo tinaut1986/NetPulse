@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.tinaut1986.netpulse.R
+import com.tinaut1986.netpulse.BuildConfig
 import com.tinaut1986.netpulse.ui.components.PremiumCard
 import com.tinaut1986.netpulse.ui.theme.*
 
@@ -140,6 +141,17 @@ fun SettingsScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.weight(1f))
+        
+        Text(
+            text = "v${BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(vertical = 16.dp)
+        )
     }
 }
 

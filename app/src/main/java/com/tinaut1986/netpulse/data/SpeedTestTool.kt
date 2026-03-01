@@ -5,12 +5,52 @@ import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.random.Random
+import kotlinx.coroutines.delay
 
 class SpeedTestTool {
     
     // Cloudflare speed test endpoints
     private val downloadUrl = "https://speed.cloudflare.com/__down?bytes="
     private val uploadUrl = "https://speed.cloudflare.com/__up"
+    private val latencyHost = "speed.cloudflare.com"
+
+    suspend fun runLatencyTest(onProgress: (Float) -> Unit): Pair<Double, Double> = withContext(Dispatchers.IO) {
+        val iterations = 5
+        val latencies = mutableListOf<Long>()
+        
+        try {
+            for (i in 0 until iterations) {
+                val startTime = System.currentTimeMillis()
+                val url = URL("https://$latencyHost/cdn-cgi/trace")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "HEAD"
+                connection.connectTimeout = 3000
+                connection.readTimeout = 3000
+                connection.connect()
+                val duration = System.currentTimeMillis() - startTime
+                latencies.add(duration)
+                onProgress((i + 1).toFloat() / iterations)
+                connection.disconnect()
+                delay(100)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
+        if (latencies.isEmpty()) return@withContext Pair(-1.0, -1.0)
+        
+        val avg = latencies.average()
+        var jitter = 0.0
+        if (latencies.size > 1) {
+            var diffSum = 0.0
+            for (i in 0 until latencies.size - 1) {
+                diffSum += Math.abs(latencies[i+1] - latencies[i]).toDouble()
+            }
+            jitter = diffSum / (latencies.size - 1)
+        }
+        
+        return@withContext Pair(avg, jitter)
+    }
 
     suspend fun runDownloadTest(onProgress: (Float) -> Unit): Double = withContext(Dispatchers.IO) {
         val chunkSizeBytes = 5 * 1024 * 1024L // 5MB per chunk

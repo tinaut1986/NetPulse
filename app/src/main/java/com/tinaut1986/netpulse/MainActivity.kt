@@ -26,11 +26,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation.compose.currentBackStackEntryAsState
 import android.content.res.Configuration
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
 import java.util.Locale
 import com.tinaut1986.netpulse.ui.screens.DevicesScreen
 import com.tinaut1986.netpulse.ui.screens.HomeScreen
-import com.tinaut1986.netpulse.ui.screens.ToolsScreen
 import com.tinaut1986.netpulse.ui.screens.SettingsScreen
 import com.tinaut1986.netpulse.ui.screens.SpeedTestScreen
 import com.tinaut1986.netpulse.ui.screens.NetworkQualityScreen
@@ -107,119 +108,37 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 
-                                Column(modifier = Modifier.weight(1f)) {
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                                        label = { Text(stringResource(R.string.dashboard)) },
-                                        selected = currentRoute == "home",
-                                        onClick = {
-                                            navController.navigate("home")
-                                            scope.launch { drawerState.close() }
-                                        },
-                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            unselectedContainerColor = Color.Transparent,
-                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                            selectedIconColor = PrimaryBlue,
-                                            selectedTextColor = PrimaryBlue,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    )
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Devices, contentDescription = null) },
-                                        label = { Text(stringResource(R.string.network_map)) },
-                                        selected = currentRoute == "devices",
-                                        onClick = {
-                                            navController.navigate("devices")
-                                            scope.launch { drawerState.close() }
-                                        },
-                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            unselectedContainerColor = Color.Transparent,
-                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                            selectedIconColor = PrimaryBlue,
-                                            selectedTextColor = PrimaryBlue,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    )
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Build, contentDescription = null) },
-                                        label = { Text(stringResource(R.string.tools)) },
-                                        selected = currentRoute == "tools",
-                                        onClick = {
-                                            navController.navigate("tools")
-                                            scope.launch { drawerState.close() }
-                                        },
-                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            unselectedContainerColor = Color.Transparent,
-                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                            selectedIconColor = PrimaryBlue,
-                                            selectedTextColor = PrimaryBlue,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    )
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Speed, contentDescription = null) },
-                                        label = { Text(stringResource(R.string.speed_test)) },
-                                        selected = currentRoute == "speed_test",
-                                        onClick = {
-                                            navController.navigate("speed_test")
-                                            scope.launch { drawerState.close() }
-                                        },
-                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            unselectedContainerColor = Color.Transparent,
-                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                            selectedIconColor = PrimaryBlue,
-                                            selectedTextColor = PrimaryBlue,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    )
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.NetworkCheck, contentDescription = null) },
-                                        label = { Text(stringResource(R.string.network_quality)) },
-                                        selected = currentRoute == "network_quality",
-                                        onClick = {
-                                            navController.navigate("network_quality")
-                                            scope.launch { drawerState.close() }
-                                        },
-                                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            unselectedContainerColor = Color.Transparent,
-                                            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                            selectedIconColor = PrimaryBlue,
-                                            selectedTextColor = PrimaryBlue,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    )
+                                Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                                    // CATEGORY: MAIN
+                                    DrawerCategoryHeader(stringResource(R.string.nav_main))
+                                    DrawerItem(stringResource(R.string.dashboard), Icons.Default.Home, "home", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.network_map), Icons.Default.Devices, "devices", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.network_quality), Icons.Default.NetworkCheck, "network_quality", currentRoute, navController, scope, drawerState)
+
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+
+                                    // CATEGORY: NETWORK AUDIT
+                                    DrawerCategoryHeader(stringResource(R.string.nav_network_tools))
+                                    DrawerItem(stringResource(R.string.ping_tool), Icons.Default.Terminal, "tool_ping", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.dns_port_tool), Icons.Default.Search, "tool_dns", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.trace_tool), Icons.Default.Map, "tool_trace", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.wifi_explorer_tool), Icons.Default.Wifi, "tool_wifi", currentRoute, navController, scope, drawerState)
+
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+
+                                    // CATEGORY: UTILITIES
+                                    DrawerCategoryHeader(stringResource(R.string.nav_utilities))
+                                    DrawerItem(stringResource(R.string.speed_test), Icons.Default.Speed, "speed_test", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.wol_tool), Icons.Default.FlashOn, "tool_wol", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.subnet_calc_tool), Icons.Default.Calculate, "tool_subnet", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.whois_tool), Icons.Default.Info, "tool_whois", currentRoute, navController, scope, drawerState)
+
+                                    Spacer(modifier = Modifier.height(16.dp))
                                 }
 
                                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 
-                                NavigationDrawerItem(
-                                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                                    label = { Text(stringResource(R.string.settings)) },
-                                    selected = currentRoute == "settings",
-                                    onClick = {
-                                        navController.navigate("settings")
-                                        scope.launch { drawerState.close() }
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                                    colors = NavigationDrawerItemDefaults.colors(
-                                        unselectedContainerColor = Color.Transparent,
-                                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                        selectedIconColor = PrimaryBlue,
-                                        selectedTextColor = PrimaryBlue,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                    )
-                                )
+                                DrawerItem(stringResource(R.string.settings), Icons.Default.Settings, "settings", currentRoute, navController, scope, drawerState)
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
@@ -263,30 +182,84 @@ class MainActivity : ComponentActivity() {
                                         onRefresh = { viewModel.scanDevices() }
                                     )
                                 }
-                                composable("tools") {
+                                composable("tool_ping") {
                                     val pingResult by viewModel.pingResult.collectAsState()
-                                    val toolResult by viewModel.toolResult.collectAsState()
-                                    val publicIp by viewModel.publicIp.collectAsState()
                                     val isPinging by viewModel.isPinging.collectAsState()
+                                    val toolHost by viewModel.toolHost.collectAsState()
+                                    com.tinaut1986.netpulse.ui.screens.PingScreen(
+                                        host = toolHost,
+                                        isPinging = isPinging,
+                                        result = pingResult,
+                                        onHostChange = { viewModel.updateToolHost(it) },
+                                        onStart = { viewModel.runPing(it) },
+                                        onStop = { viewModel.stopPing() }
+                                    )
+                                }
+                                composable("tool_dns") {
+                                    val dnsResult by viewModel.dnsResult.collectAsState()
+                                    val portResult by viewModel.portResult.collectAsState()
                                     val isPortScanning by viewModel.isPortScanning.collectAsState()
                                     val portScanProgress by viewModel.portScanProgress.collectAsState()
                                     val portScanResults by viewModel.portScanResults.collectAsState()
+                                    val toolHost by viewModel.toolHost.collectAsState()
+                                    val toolPort by viewModel.toolPort.collectAsState()
 
-                                    ToolsScreen(
-                                        pingResult = pingResult,
-                                        toolResult = toolResult,
-                                        publicIp = publicIp,
-                                        isPinging = isPinging,
+                                    com.tinaut1986.netpulse.ui.screens.DnsPortScreen(
+                                        host = toolHost,
+                                        port = toolPort,
+                                        dnsResult = dnsResult,
+                                        portResult = portResult,
                                         isPortScanning = isPortScanning,
                                         portScanProgress = portScanProgress,
                                         portScanResults = portScanResults,
-                                        onPing = { viewModel.runPing(it) },
-                                        onStopPing = { viewModel.stopPing() },
-                                        onPortCheck = { host, port -> viewModel.runPortCheck(host, port) },
+                                        onHostChange = { viewModel.updateToolHost(it) },
+                                        onPortChange = { viewModel.updateToolPort(it) },
+                                        onDns = { viewModel.runDnsLookup(it) },
+                                        onPort = { host, port -> viewModel.runPortCheck(host, port) },
                                         onFullPortScan = { viewModel.runFullPortScan(it) },
-                                        onStopPortScan = { viewModel.stopPortScan() },
-                                        onDnsLookup = { viewModel.runDnsLookup(it) },
-                                        onTraceroute = { viewModel.runTraceroute(it) }
+                                        onStopPortScan = { viewModel.stopPortScan() }
+                                    )
+                                }
+                                composable("tool_trace") {
+                                    val traceResult by viewModel.traceResult.collectAsState()
+                                    val isPinging by viewModel.isPinging.collectAsState()
+                                    val toolHost by viewModel.toolHost.collectAsState()
+                                    com.tinaut1986.netpulse.ui.screens.TraceScreen(
+                                        host = toolHost,
+                                        isPinging = isPinging,
+                                        result = traceResult,
+                                        onHostChange = { viewModel.updateToolHost(it) },
+                                        onTrace = { viewModel.runTraceroute(it) }
+                                    )
+                                }
+                                composable("tool_wol") {
+                                    val wolResult by viewModel.wolResult.collectAsState()
+                                    com.tinaut1986.netpulse.ui.screens.WolScreen(
+                                        onWol = { viewModel.wakeOnLan(it) }
+                                    )
+                                }
+                                composable("tool_subnet") {
+                                    val subnetInfo by viewModel.subnetInfo.collectAsState()
+                                    com.tinaut1986.netpulse.ui.screens.SubnetCalcScreen(
+                                        subnetInfo = subnetInfo,
+                                        onCalculate = { ip, mask -> viewModel.calculateSubnet(ip, mask) }
+                                    )
+                                }
+                                composable("tool_wifi") {
+                                    val nearbyWifi by viewModel.nearbyWifi.collectAsState()
+                                    com.tinaut1986.netpulse.ui.screens.WifiExplorerScreen(
+                                        nearbyWifi = nearbyWifi,
+                                        onScan = { viewModel.scanNearbyWifi() }
+                                    )
+                                }
+                                composable("tool_whois") {
+                                    val whoisResult by viewModel.whoisResult.collectAsState()
+                                    val toolHost by viewModel.toolHost.collectAsState()
+                                    com.tinaut1986.netpulse.ui.screens.WhoisScreen(
+                                        host = toolHost,
+                                        result = whoisResult,
+                                        onHostChange = { viewModel.updateToolHost(it) },
+                                        onWhois = { viewModel.runWhois(it) }
                                     )
                                 }
                                 composable("speed_test") {
@@ -294,12 +267,17 @@ class MainActivity : ComponentActivity() {
                                     val progress by viewModel.speedTestProgress.collectAsState()
                                     val downloadSpeed by viewModel.downloadSpeed.collectAsState()
                                     val uploadSpeed by viewModel.uploadSpeed.collectAsState()
+                                    val latency by viewModel.speedTestLatency.collectAsState()
+                                    val jitter by viewModel.speedTestJitter.collectAsState()
                                     val phase by viewModel.speedTestPhase.collectAsState()
+
                                     SpeedTestScreen(
                                         isTesting = isTesting,
                                         progress = progress,
                                         downloadSpeed = downloadSpeed,
                                         uploadSpeed = uploadSpeed,
+                                        latency = latency,
+                                        jitter = jitter,
                                         phase = phase,
                                         onStartTest = { viewModel.runSpeedTest() }
                                     )
@@ -367,4 +345,49 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@Composable
+fun DrawerCategoryHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelMedium,
+        color = PrimaryBlue,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(start = 28.dp, top = 16.dp, bottom = 8.dp)
+    )
+}
+
+@Composable
+fun DrawerItem(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    route: String,
+    currentRoute: String,
+    navController: androidx.navigation.NavController,
+    scope: kotlinx.coroutines.CoroutineScope,
+    drawerState: DrawerState
+) {
+    NavigationDrawerItem(
+        icon = { Icon(icon, contentDescription = null) },
+        label = { Text(label) },
+        selected = currentRoute == route,
+        onClick = {
+            navController.navigate(route) {
+                launchSingleTop = true
+                popUpTo("home") { saveState = true }
+                restoreState = true
+            }
+            scope.launch { drawerState.close() }
+        },
+        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+            selectedContainerColor = PrimaryBlue.copy(alpha = 0.1f),
+            selectedIconColor = PrimaryBlue,
+            selectedTextColor = PrimaryBlue,
+            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+    )
 }
