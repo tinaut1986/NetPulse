@@ -16,7 +16,8 @@
 - **🛠️ Professional Network Tools:**
   - **Ping & Traceroute:** Measure round-trip time and path with professional, independent terminal sessions.
   - **WHOIS Lookup:** Resolve domain registration details with smart subdomain detection.
-  - **DNS & Port Scanner:** Parallel scanning of all 65535 ports with service identification.
+  - **DNS Lookup:** Perform DNS queries to resolve domain names to IP addresses.
+  - **Port Scanner:** Fast and parallel scanning of all 65535 ports with service identification.
 - **🚀 Enhanced Speed Test:** Animated interface for Download, Upload, and specialized Latency/Jitter testing.
 - **🌗 Theme Support:** Full support for Light and Dark modes.
 - **🌐 Multilingual:** Available in English and Spanish.
