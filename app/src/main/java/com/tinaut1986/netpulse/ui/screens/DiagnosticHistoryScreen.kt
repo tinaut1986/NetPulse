@@ -50,7 +50,8 @@ fun DiagnosticHistoryScreen(
     onExport: (String) -> Unit,
     onDeleteMultiple: (List<String>) -> Unit,
     onExportMultiple: (List<String>) -> Unit,
-    onExportAll: () -> Unit
+    onExportAll: () -> Unit,
+    onBack: () -> Unit
 ) {
     // ── Selection state ──────────────────────────────────────────
     var selectionMode by remember { mutableStateOf(false) }
@@ -156,8 +157,11 @@ fun DiagnosticHistoryScreen(
             body = stringResource(R.string.delete_all_body),
             confirmLabel = stringResource(R.string.delete_all),
             confirmColor = SignalRed,
-            onConfirm = { onDeleteAll(); },
-            onDismiss = { }
+            onConfirm = { 
+                onDeleteAll()
+                showDeleteAllDialog = false 
+            },
+            onDismiss = { showDeleteAllDialog = false }
         )
     }
 
@@ -169,8 +173,11 @@ fun DiagnosticHistoryScreen(
             body = stringResource(R.string.export_all_body, entries.size),
             confirmLabel = stringResource(R.string.export_all),
             confirmColor = PrimaryBlue,
-            onConfirm = { onExportAll(); },
-            onDismiss = { }
+            onConfirm = { 
+                onExportAll()
+                showExportAllDialog = false 
+            },
+            onDismiss = { showExportAllDialog = false }
         )
     }
 
@@ -185,8 +192,9 @@ fun DiagnosticHistoryScreen(
             onConfirm = {
                 onDeleteMultiple(selectedIds.toList())
                 exitSelection()
+                showDeleteSelectionDialog = false
             },
-            onDismiss = { }
+            onDismiss = { showDeleteSelectionDialog = false }
         )
     }
 }
@@ -198,51 +206,33 @@ private fun NormalHeader(
     onDeleteAll: () -> Unit,
     onExportAll: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Default.History,
-                contentDescription = null,
-                tint = PrimaryBlue,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(
-                text = stringResource(R.string.history_title),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-        if (hasEntries) {
-            Row {
-                IconButton(
-                    onClick = onExportAll,
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryBlue.copy(alpha = 0.1f))
-                ) {
-                    Icon(
-                        Icons.Default.IosShare,
-                        contentDescription = stringResource(R.string.export_all),
-                        tint = PrimaryBlue
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = onDeleteAll,
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = SignalRed.copy(alpha = 0.1f))
-                ) {
-                    Icon(
-                        Icons.Default.DeleteSweep,
-                        contentDescription = stringResource(R.string.delete_all),
-                        tint = SignalRed.copy(alpha = 0.7f)
-                    )
-                }
+    if (hasEntries) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            IconButton(
+                onClick = onExportAll,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryBlue.copy(alpha = 0.1f))
+            ) {
+                Icon(
+                    Icons.Default.IosShare,
+                    contentDescription = stringResource(R.string.export_all),
+                    tint = PrimaryBlue
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = onDeleteAll,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = SignalRed.copy(alpha = 0.1f))
+            ) {
+                Icon(
+                    Icons.Default.DeleteSweep,
+                    contentDescription = stringResource(R.string.delete_all),
+                    tint = SignalRed.copy(alpha = 0.7f)
+                )
             }
         }
     }
@@ -465,8 +455,11 @@ fun HistoryEntryCard(
             body = stringResource(R.string.delete_entry_body, entry.label),
             confirmLabel = stringResource(R.string.delete_entry),
             confirmColor = SignalRed,
-            onConfirm = { onDelete(); },
-            onDismiss = { }
+            onConfirm = { 
+                onDelete()
+                showDeleteDialog = false 
+            },
+            onDismiss = { showDeleteDialog = false }
         )
     }
 }
@@ -515,15 +508,12 @@ fun DiagnosticDetailScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = MaterialTheme.colorScheme.onBackground)
-            }
             Column(modifier = Modifier.weight(1f)) {
-                Text(entry.ssid, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(entry.label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), fontSize = 12.sp)
+                Text(entry.ssid, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(entry.label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), fontSize = 14.sp)
             }
             IconButton(
                 onClick = onExport,

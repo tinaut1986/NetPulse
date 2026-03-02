@@ -29,25 +29,7 @@ fun HomeScreen(wifiInfo: WifiInfo, signalHistory: List<Int>, publicIp: String) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Unified Screen Header
-        Row(
-            modifier = Modifier.padding(bottom = 24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Home,
-                contentDescription = null,
-                tint = PrimaryBlue,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = stringResource(R.string.dashboard),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
-        }
+
 
         // Main Signal Card
         PremiumCard {

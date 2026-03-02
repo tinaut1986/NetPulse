@@ -10,13 +10,15 @@
     <string name="cellular_network">Red Móvil</string>
     <string name="cellular_mode_active">Modo datos móviles activo</string>
     <string name="ping_tool">Ping</string>
-    <string name="dns_port_tool">DNS / Puertos</string>
+    <string name="dns_tool">DNS</string>
+    <string name="port_tool">Puertos</string>
     <string name="trace_tool">Rutas</string>
     <string name="ping_title">Herramienta Ping</string>
     <string name="host_ip_label">Dominio o IP</string>
     <string name="stop_ping">Detener Ping</string>
     <string name="start_ping">Iniciar Ping</string>
-    <string name="dns_port_title">DNS &amp; Escáner de Puertos</string>
+    <string name="dns_title">Consulta DNS</string>
+    <string name="port_title">Escáner de Puertos</string>
     <string name="host_url_label">Dominio o URL</string>
     <string name="port_label">Puerto</string>
     <string name="port_label_optional">Puerto (vacío = Todos)</string>

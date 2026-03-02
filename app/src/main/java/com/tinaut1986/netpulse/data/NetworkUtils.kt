@@ -1,5 +1,7 @@
 package com.tinaut1986.netpulse.data
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -22,8 +24,8 @@ object NetworkUtils {
     /**
      * Sends a Wake-on-LAN magic packet to the specified MAC address.
      */
-    fun sendWakeOnLan(macAddress: String, broadcastIp: String = "255.255.255.255"): Result<Unit> {
-        return try {
+    suspend fun sendWakeOnLan(macAddress: String, broadcastIp: String = "255.255.255.255"): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
             val macBytes = getMacBytes(macAddress)
             val bytes = ByteArray(6 + 16 * macBytes.size)
             for (i in 0..5) {
@@ -115,14 +117,14 @@ object NetworkUtils {
      * Performs a WHOIS lookup for a domain or IP.
      * Note: Simplistic version, real WHOIS often requires connecting to specific servers based on TLD.
      */
-    fun whoisLookup(target: String): String {
+    suspend fun whoisLookup(target: String): String = withContext(Dispatchers.IO) {
         val cleanTarget = target.trim().lowercase()
         // WHOIS servers for domains usually don't handle www. or subdomains directly
         if (cleanTarget.startsWith("www.")) {
-            return "Error: Please use the base domain (e.g., 'google.com' instead of 'www.google.com') for WHOIS lookups."
+            return@withContext "Error: Please use the base domain (e.g., 'google.com' instead of 'www.google.com') for WHOIS lookups."
         }
         
-        return try {
+        try {
             val socket = Socket()
             socket.connect(InetSocketAddress("whois.iana.org", 43), 5000)
             socket.getOutputStream().write((cleanTarget + "\r\n").toByteArray())

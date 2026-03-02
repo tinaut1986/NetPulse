@@ -222,7 +222,7 @@ class NetPulseViewModel(application: Application) : AndroidViewModel(application
                 val time = pingTool.ping(host)
                 val line = if (time >= 0) "Reply from $host: time=${time}ms" else "Request timed out"
                 results.add(line)
-                if (results.size > 10) results.removeAt(0)
+                // Removed truncation to allow full scroll history
                 _pingResult.value = results.joinToString("\n")
                 delay(1000)
             }

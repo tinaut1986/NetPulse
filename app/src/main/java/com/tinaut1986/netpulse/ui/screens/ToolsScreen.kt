@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
@@ -46,37 +47,18 @@ private val PORT_SERVICES_TOOLS = mapOf(
 fun ToolScreenContainer(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    scrollable: Boolean = true,
+    onBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .let { if (scrollable) it.verticalScroll(scrollState) else it }
     ) {
-        // Screen Title
-        Row(
-            modifier = Modifier.padding(bottom = 24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = PrimaryBlue,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         content()
     }
 }
@@ -88,9 +70,15 @@ fun PingScreen(
     result: String?,
     onHostChange: (String) -> Unit,
     onStart: (String) -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
+    onBack: () -> Unit
 ) {
-    ToolScreenContainer(stringResource(R.string.ping_title), Icons.Default.Terminal) {
+    ToolScreenContainer(
+        title = stringResource(R.string.ping_title),
+        icon = Icons.Default.Terminal,
+        scrollable = false,
+        onBack = onBack
+    ) {
         PremiumCard {
             ToolInput(host, stringResource(R.string.host_ip_label), onHostChange, !isPinging)
 
@@ -106,29 +94,62 @@ fun PingScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(if (isPinging) stringResource(R.string.stop_ping) else stringResource(R.string.start_ping), fontSize = 14.sp)
             }
-
-            ResultDisplay(result)
         }
+        ResultDisplay(result, modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun DnsPortScreen(
+fun DnsLookupScreen(
+    host: String,
+    dnsResult: String?,
+    onHostChange: (String) -> Unit,
+    onDns: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    ToolScreenContainer(
+        title = stringResource(R.string.dns_title),
+        icon = Icons.Default.Search,
+        scrollable = false,
+        onBack = onBack
+    ) {
+        PremiumCard {
+            ToolInput(host, stringResource(R.string.host_url_label), onHostChange)
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { onDns(host) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
+            ) {
+                Text(stringResource(R.string.dns_lookup_btn), fontSize = 14.sp)
+            }
+        }
+        ResultDisplay(dnsResult, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun PortScannerScreen(
     host: String,
     port: String,
-    dnsResult: String?,
     portResult: String?,
     isPortScanning: Boolean,
     portScanProgress: Float,
     portScanResults: List<Int>,
     onHostChange: (String) -> Unit,
     onPortChange: (String) -> Unit,
-    onDns: (String) -> Unit,
     onPort: (String, Int) -> Unit,
     onFullPortScan: (String) -> Unit,
-    onStopPortScan: () -> Unit
+    onStopPortScan: () -> Unit,
+    onBack: () -> Unit
 ) {
-    ToolScreenContainer(stringResource(R.string.dns_port_title), Icons.Default.Search) {
+    ToolScreenContainer(
+        title = stringResource(R.string.port_title),
+        icon = Icons.AutoMirrored.Filled.ManageSearch,
+        scrollable = false,
+        onBack = onBack
+    ) {
         PremiumCard {
             ToolInput(host, stringResource(R.string.host_url_label), onHostChange, !isPortScanning)
 
@@ -137,69 +158,57 @@ fun DnsPortScreen(
             // Port check / Full port scan
             val isFullScanMode = port.trim().isEmpty()
 
-            Row(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = port,
-                    onValueChange = onPortChange,
-                    label = { Text(stringResource(R.string.port_label_optional)) },
-                    modifier = Modifier.weight(1f),
-                    enabled = !isPortScanning,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = { 
-                        if (isPortScanning) {
-                            onStopPortScan()
-                        } else if (isFullScanMode) {
-                            onFullPortScan(host)
-                        } else {
-                            onPort(host, port.toIntOrNull() ?: 80)
-                        }
-                    },
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = when {
-                            isPortScanning -> SignalRed
-                            isFullScanMode -> Color(0xFF1A7F5A)
-                            else -> MaterialTheme.colorScheme.primary
-                        }
-                    )
-                ) {
-                    if (isFullScanMode || isPortScanning) {
-                        Icon(
-                            if (isPortScanning) Icons.Default.Stop else Icons.AutoMirrored.Filled.ManageSearch,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                    }
-                    Text(
-                        text = when {
-                            isPortScanning -> stringResource(R.string.stop_scan)
-                            isFullScanMode -> stringResource(R.string.scan_all)
-                            else -> stringResource(R.string.check_btn)
-                        },
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // DNS Lookup
-            Button(
-                onClick = { onDns(host) },
+            OutlinedTextField(
+                value = port,
+                onValueChange = onPortChange,
+                label = { Text(stringResource(R.string.port_label_optional)) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isPortScanning,
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = {
+                    if (isPortScanning) {
+                        onStopPortScan()
+                    } else if (isFullScanMode) {
+                        onFullPortScan(host)
+                    } else {
+                        onPort(host, port.toIntOrNull() ?: 80)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = when {
+                        isPortScanning -> SignalRed
+                        isFullScanMode -> Color(0xFF1A7F5A)
+                        else -> MaterialTheme.colorScheme.primary
+                    }
+                )
             ) {
-                Text(stringResource(R.string.dns_lookup_btn), fontSize = 14.sp)
+                if (isFullScanMode || isPortScanning) {
+                    Icon(
+                        if (isPortScanning) Icons.Default.Stop else Icons.AutoMirrored.Filled.ManageSearch,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+                Text(
+                    text = when {
+                        isPortScanning -> stringResource(R.string.stop_scan)
+                        isFullScanMode -> stringResource(R.string.scan_all)
+                        else -> stringResource(R.string.check_btn)
+                    },
+                    fontSize = 14.sp
+                )
             }
 
             if (isPortScanning || portScanResults.isNotEmpty()) {
@@ -235,30 +244,49 @@ fun DnsPortScreen(
                     }
                 }
             }
-            ResultDisplay(if (isPortScanning) null else portResult)
-            ResultDisplay(dnsResult)
         }
+        ResultDisplay(if (isPortScanning) null else portResult, modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun TraceScreen(host: String, isPinging: Boolean, result: String?, onHostChange: (String) -> Unit, onTrace: (String) -> Unit) {
-    ToolScreenContainer(stringResource(R.string.traceroute_title), Icons.Default.Map) {
+fun TraceScreen(
+    host: String,
+    isPinging: Boolean,
+    result: String?,
+    onHostChange: (String) -> Unit,
+    onTrace: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    ToolScreenContainer(
+        title = stringResource(R.string.traceroute_title),
+        icon = Icons.Default.Map,
+        scrollable = false,
+        onBack = onBack
+    ) {
         PremiumCard {
             ToolInput(host, stringResource(R.string.target_host_label), onHostChange, !isPinging)
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { onTrace(host) }, modifier = Modifier.fillMaxWidth(), enabled = !isPinging, shape = RoundedCornerShape(8.dp)) {
                 Text(stringResource(R.string.run_traceroute_btn), fontSize = 14.sp)
             }
-            ResultDisplay(result)
         }
+        ResultDisplay(result, modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun WolScreen(onWol: (String) -> Unit) {
+fun WolScreen(
+    result: String?,
+    onWol: (String) -> Unit,
+    onBack: () -> Unit
+) {
     var mac by remember { mutableStateOf("") }
-    ToolScreenContainer(stringResource(R.string.wol_title), Icons.Default.FlashOn) {
+    ToolScreenContainer(
+        title = stringResource(R.string.wol_title),
+        icon = Icons.Default.FlashOn,
+        onBack = onBack
+    ) {
         PremiumCard {
             ToolInput(mac, stringResource(R.string.mac_label), { mac = it })
             Spacer(modifier = Modifier.height(16.dp))
@@ -268,14 +296,23 @@ fun WolScreen(onWol: (String) -> Unit) {
                 Text(stringResource(R.string.send_wol), fontSize = 14.sp)
             }
         }
+        ResultDisplay(result)
     }
 }
 
 @Composable
-fun SubnetCalcScreen(subnetInfo: SubnetInfo?, onCalculate: (String, String) -> Unit) {
+fun SubnetCalcScreen(
+    subnetInfo: SubnetInfo?,
+    onCalculate: (String, String) -> Unit,
+    onBack: () -> Unit
+) {
     var ip by remember { mutableStateOf("192.168.1.1") }
     var mask by remember { mutableStateOf("24") }
-    ToolScreenContainer(stringResource(R.string.subnet_calc_title), Icons.Default.Calculate) {
+    ToolScreenContainer(
+        title = stringResource(R.string.subnet_calc_title),
+        icon = Icons.Default.Calculate,
+        onBack = onBack
+    ) {
         PremiumCard {
             Row(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(value = ip, onValueChange = { ip = it }, label = { Text("IP") }, modifier = Modifier.weight(2f), shape = RoundedCornerShape(8.dp))
@@ -309,22 +346,41 @@ fun SubnetRow(label: String, value: String) {
 }
 
 @Composable
-fun WhoisScreen(host: String, result: String?, onHostChange: (String) -> Unit, onWhois: (String) -> Unit) {
-    ToolScreenContainer(stringResource(R.string.whois_title), Icons.Default.Info) {
+fun WhoisScreen(
+    host: String,
+    result: String?,
+    onHostChange: (String) -> Unit,
+    onWhois: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    ToolScreenContainer(
+        title = stringResource(R.string.whois_title),
+        icon = Icons.Default.Info,
+        scrollable = false,
+        onBack = onBack
+    ) {
         PremiumCard {
             ToolInput(host, stringResource(R.string.host_url_label), onHostChange)
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { onWhois(host) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
                 Text(stringResource(R.string.whois_lookup_btn))
             }
-            ResultDisplay(result)
         }
+        ResultDisplay(result, modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun WifiExplorerScreen(nearbyWifi: List<NearbyWifi>, onScan: () -> Unit) {
-    ToolScreenContainer(stringResource(R.string.wifi_explorer_title), Icons.Default.Wifi) {
+fun WifiExplorerScreen(
+    nearbyWifi: List<NearbyWifi>,
+    onScan: () -> Unit,
+    onBack: () -> Unit
+) {
+    ToolScreenContainer(
+        title = stringResource(R.string.wifi_explorer_title),
+        icon = Icons.Default.Wifi,
+        onBack = onBack
+    ) {
         Button(
             onClick = onScan,
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
@@ -385,14 +441,33 @@ fun ToolInput(value: String, label: String, onValueChange: (String) -> Unit, ena
 }
 
 @Composable
-fun ResultDisplay(result: String?) {
+fun ResultDisplay(result: String?, modifier: Modifier = Modifier) {
     if (result != null) {
         val scrollState = rememberScrollState()
-        LaunchedEffect(result) { scrollState.animateScrollTo(scrollState.maxValue) }
+        // Stronger effect to ensure scrolling to bottom on update
+        LaunchedEffect(result) {
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+        
         Spacer(modifier = Modifier.height(16.dp))
-        Surface(modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp), color = Color(0xFF0F0F1A), shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))) {
-            Box(modifier = Modifier.padding(12.dp).verticalScroll(scrollState)) {
-                Text(result, color = PrimaryBlue, style = MaterialTheme.typography.bodySmall, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+        Surface(
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(min = 100.dp),
+            color = Color(0xFF0F0F1A), 
+            shape = RoundedCornerShape(8.dp), 
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+        ) {
+            Box(modifier = Modifier
+                .padding(12.dp)
+                .verticalScroll(scrollState)
+            ) {
+                Text(
+                    text = result, 
+                    color = PrimaryBlue, 
+                    style = MaterialTheme.typography.bodySmall, 
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
             }
         }
     }

@@ -1,45 +1,87 @@
 package com.tinaut1986.netpulse
 
 import android.Manifest
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.NetworkCheck
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation.compose.currentBackStackEntryAsState
-import android.content.res.Configuration
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.Alignment
-import java.util.Locale
+import androidx.navigation.compose.rememberNavController
 import com.tinaut1986.netpulse.ui.screens.DevicesScreen
+import com.tinaut1986.netpulse.ui.screens.DiagnosticDetailScreen
+import com.tinaut1986.netpulse.ui.screens.DiagnosticHistoryScreen
 import com.tinaut1986.netpulse.ui.screens.HomeScreen
+import com.tinaut1986.netpulse.ui.screens.NetworkQualityScreen
 import com.tinaut1986.netpulse.ui.screens.SettingsScreen
 import com.tinaut1986.netpulse.ui.screens.SpeedTestScreen
-import com.tinaut1986.netpulse.ui.screens.NetworkQualityScreen
-import com.tinaut1986.netpulse.ui.screens.DiagnosticHistoryScreen
-import com.tinaut1986.netpulse.ui.screens.DiagnosticDetailScreen
 import com.tinaut1986.netpulse.ui.theme.NetPulseTheme
 import com.tinaut1986.netpulse.ui.theme.PrimaryBlue
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -120,7 +162,9 @@ class MainActivity : ComponentActivity() {
                                     // CATEGORY: NETWORK AUDIT
                                     DrawerCategoryHeader(stringResource(R.string.nav_network_tools))
                                     DrawerItem(stringResource(R.string.ping_tool), Icons.Default.Terminal, "tool_ping", currentRoute, navController, scope, drawerState)
-                                    DrawerItem(stringResource(R.string.dns_port_tool), Icons.Default.Search, "tool_dns", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.dns_tool), Icons.Default.Search, "tool_dns", currentRoute, navController, scope, drawerState)
+                                    DrawerItem(stringResource(R.string.port_tool),
+                                        Icons.AutoMirrored.Filled.ManageSearch, "tool_port", currentRoute, navController, scope, drawerState)
                                     DrawerItem(stringResource(R.string.trace_tool), Icons.Default.Map, "tool_trace", currentRoute, navController, scope, drawerState)
                                     DrawerItem(stringResource(R.string.wifi_explorer_tool), Icons.Default.Wifi, "tool_wifi", currentRoute, navController, scope, drawerState)
 
@@ -146,11 +190,53 @@ class MainActivity : ComponentActivity() {
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
                             topBar = {
+                                val (titleRes, iconVector, isSubmenu) = when (currentRoute) {
+                                    "home" -> Triple(R.string.dashboard, Icons.Default.Home, false)
+                                    "devices" -> Triple(R.string.network_map, Icons.Default.Devices, false)
+                                    "network_quality" -> Triple(R.string.network_quality, Icons.Default.NetworkCheck, false)
+                                    "tool_ping" -> Triple(R.string.ping_tool, Icons.Default.Terminal, false)
+                                    "tool_dns" -> Triple(R.string.dns_tool, Icons.Default.Search, false)
+                                    "tool_port" -> Triple(R.string.port_tool, Icons.AutoMirrored.Filled.ManageSearch, false)
+                                    "tool_trace" -> Triple(R.string.trace_tool, Icons.Default.Map, false)
+                                    "tool_wifi" -> Triple(R.string.wifi_explorer_tool, Icons.Default.Wifi, false)
+                                    "speed_test" -> Triple(R.string.speed_test, Icons.Default.Speed, false)
+                                    "tool_wol" -> Triple(R.string.wol_tool, Icons.Default.FlashOn, false)
+                                    "tool_subnet" -> Triple(R.string.subnet_calc_tool, Icons.Default.Calculate, false)
+                                    "tool_whois" -> Triple(R.string.whois_tool, Icons.Default.Info, false)
+                                    "settings" -> Triple(R.string.settings, Icons.Default.Settings, false)
+                                    "history", "history_detail" -> Triple(R.string.history_title, Icons.Default.History, true)
+                                    else -> Triple(R.string.app_name, Icons.Default.Home, false)
+                                }
+
                                 CenterAlignedTopAppBar(
-                                    title = { Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold) },
+                                    title = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = iconVector,
+                                                contentDescription = stringResource(titleRes),
+                                                tint = MaterialTheme.colorScheme.onBackground,
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                            Text(
+                                                stringResource(titleRes),
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    },
                                     navigationIcon = {
-                                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onBackground)
+                                        if (isSubmenu) {
+                                            IconButton(onClick = { navController.popBackStack() }) {
+                                                Icon(
+                                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                                    contentDescription = "Back",
+                                                    tint = MaterialTheme.colorScheme.onBackground
+                                                )
+                                            }
+                                        } else {
+                                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onBackground)
+                                            }
                                         }
                                     },
                                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -190,13 +276,25 @@ class MainActivity : ComponentActivity() {
                                         host = toolHost,
                                         isPinging = isPinging,
                                         result = pingResult,
-                                        onHostChange = { viewModel.updateToolHost(it) },
-                                        onStart = { viewModel.runPing(it) },
-                                        onStop = { viewModel.stopPing() }
-                                    )
-                                }
+                                         onHostChange = { viewModel.updateToolHost(it) },
+                                         onStart = { viewModel.runPing(it) },
+                                         onStop = { viewModel.stopPing() },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
                                 composable("tool_dns") {
                                     val dnsResult by viewModel.dnsResult.collectAsState()
+                                    val toolHost by viewModel.toolHost.collectAsState()
+
+                                    com.tinaut1986.netpulse.ui.screens.DnsLookupScreen(
+                                        host = toolHost,
+                                        dnsResult = dnsResult,
+                                         onHostChange = { viewModel.updateToolHost(it) },
+                                         onDns = { viewModel.runDnsLookup(it) },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
+                                composable("tool_port") {
                                     val portResult by viewModel.portResult.collectAsState()
                                     val isPortScanning by viewModel.isPortScanning.collectAsState()
                                     val portScanProgress by viewModel.portScanProgress.collectAsState()
@@ -204,22 +302,21 @@ class MainActivity : ComponentActivity() {
                                     val toolHost by viewModel.toolHost.collectAsState()
                                     val toolPort by viewModel.toolPort.collectAsState()
 
-                                    com.tinaut1986.netpulse.ui.screens.DnsPortScreen(
+                                    com.tinaut1986.netpulse.ui.screens.PortScannerScreen(
                                         host = toolHost,
                                         port = toolPort,
-                                        dnsResult = dnsResult,
                                         portResult = portResult,
                                         isPortScanning = isPortScanning,
                                         portScanProgress = portScanProgress,
                                         portScanResults = portScanResults,
                                         onHostChange = { viewModel.updateToolHost(it) },
-                                        onPortChange = { viewModel.updateToolPort(it) },
-                                        onDns = { viewModel.runDnsLookup(it) },
-                                        onPort = { host, port -> viewModel.runPortCheck(host, port) },
-                                        onFullPortScan = { viewModel.runFullPortScan(it) },
-                                        onStopPortScan = { viewModel.stopPortScan() }
-                                    )
-                                }
+                                         onPortChange = { viewModel.updateToolPort(it) },
+                                         onPort = { host, port -> viewModel.runPortCheck(host, port) },
+                                         onFullPortScan = { viewModel.runFullPortScan(it) },
+                                         onStopPortScan = { viewModel.stopPortScan() },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
                                 composable("tool_trace") {
                                     val traceResult by viewModel.traceResult.collectAsState()
                                     val isPinging by viewModel.isPinging.collectAsState()
@@ -228,40 +325,46 @@ class MainActivity : ComponentActivity() {
                                         host = toolHost,
                                         isPinging = isPinging,
                                         result = traceResult,
-                                        onHostChange = { viewModel.updateToolHost(it) },
-                                        onTrace = { viewModel.runTraceroute(it) }
-                                    )
-                                }
+                                         onHostChange = { viewModel.updateToolHost(it) },
+                                         onTrace = { viewModel.runTraceroute(it) },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
                                 composable("tool_wol") {
                                     val wolResult by viewModel.wolResult.collectAsState()
-                                    com.tinaut1986.netpulse.ui.screens.WolScreen(
-                                        onWol = { viewModel.wakeOnLan(it) }
-                                    )
-                                }
+                                     com.tinaut1986.netpulse.ui.screens.WolScreen(
+                                         result = wolResult,
+                                         onWol = { viewModel.wakeOnLan(it) },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
                                 composable("tool_subnet") {
                                     val subnetInfo by viewModel.subnetInfo.collectAsState()
-                                    com.tinaut1986.netpulse.ui.screens.SubnetCalcScreen(
-                                        subnetInfo = subnetInfo,
-                                        onCalculate = { ip, mask -> viewModel.calculateSubnet(ip, mask) }
-                                    )
-                                }
+                                     com.tinaut1986.netpulse.ui.screens.SubnetCalcScreen(
+                                         subnetInfo = subnetInfo,
+                                         onCalculate = { ip, mask -> viewModel.calculateSubnet(ip, mask) },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
                                 composable("tool_wifi") {
                                     val nearbyWifi by viewModel.nearbyWifi.collectAsState()
-                                    com.tinaut1986.netpulse.ui.screens.WifiExplorerScreen(
-                                        nearbyWifi = nearbyWifi,
-                                        onScan = { viewModel.scanNearbyWifi() }
-                                    )
-                                }
+                                     com.tinaut1986.netpulse.ui.screens.WifiExplorerScreen(
+                                         nearbyWifi = nearbyWifi,
+                                         onScan = { viewModel.scanNearbyWifi() },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
                                 composable("tool_whois") {
                                     val whoisResult by viewModel.whoisResult.collectAsState()
                                     val toolHost by viewModel.toolHost.collectAsState()
                                     com.tinaut1986.netpulse.ui.screens.WhoisScreen(
                                         host = toolHost,
-                                        result = whoisResult,
-                                        onHostChange = { viewModel.updateToolHost(it) },
-                                        onWhois = { viewModel.runWhois(it) }
-                                    )
-                                }
+                                         result = whoisResult,
+                                         onHostChange = { viewModel.updateToolHost(it) },
+                                         onWhois = { viewModel.runWhois(it) },
+                                         onBack = { navController.popBackStack() }
+                                     )
+                                 }
                                 composable("speed_test") {
                                     val isTesting by viewModel.isTestingSpeed.collectAsState()
                                     val progress by viewModel.speedTestProgress.collectAsState()
@@ -279,15 +382,17 @@ class MainActivity : ComponentActivity() {
                                         latency = latency,
                                         jitter = jitter,
                                         phase = phase,
-                                        onStartTest = { viewModel.runSpeedTest() }
+                                        onStartTest = { viewModel.runSpeedTest() },
+                                        onBack = { navController.popBackStack() }
                                     )
                                 }
-                                composable("settings") {
+                                 composable("settings") {
                                     SettingsScreen(
                                         currentTheme = currentTheme,
                                         onThemeChange = { settingsManager.setTheme(it) },
                                         currentLanguage = currentLanguage,
-                                        onLanguageChange = { settingsManager.setLanguage(it) }
+                                        onLanguageChange = { settingsManager.setLanguage(it) },
+                                        onBack = { navController.popBackStack() }
                                     )
                                 }
                                 composable("network_quality") {
@@ -307,7 +412,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                 }
-                                composable("history") {
+                                 composable("history") {
                                     val history by viewModel.historyList.collectAsState()
                                     DiagnosticHistoryScreen(
                                         entries = history,
@@ -320,7 +425,8 @@ class MainActivity : ComponentActivity() {
                                         onExport = { id -> viewModel.exportDiagnostic(id) },
                                         onDeleteMultiple = { ids -> viewModel.deleteMultipleDiagnostics(ids) },
                                         onExportMultiple = { ids -> viewModel.exportMultipleDiagnostics(ids) },
-                                        onExportAll = { viewModel.exportAllDiagnostics() }
+                                        onExportAll = { viewModel.exportAllDiagnostics() },
+                                        onBack = { navController.popBackStack() }
                                     )
                                 }
                                 composable("history_detail") {
